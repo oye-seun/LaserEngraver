@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>Laser Engraver</title>
+    <style type="text/css">
+.canvasDiv {
+  display: inline-block;
+  z-index: auto;
+  border-width: 0px;
+  border-style: none;
+  text-align: center;
+  height: 500px;
+  width: 500px;
+  margin-left: 20px;
+  margin-right: 20px;
+  position: relative;
+}
+
+#div2 {
+  background-attachment: scroll;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 500px 500px;
+  background-clip: border-box;
+  background-origin: padding-box;
+  font-size: 0px;
+  width: 500px;
+  height: 500px;
+  min-width: 100px;
+  max-width: 500px;
+  min-height: 500px;
+  max-height: 500px;
+  padding: 0px;
+  margin: 0px;
+  display: inline-block;
+  z-index: auto;
+  text-align: center;
+  visibility: visible;
+  position: absolute;
+  right: 0%;
+}
+
+#heading {
+  text-transform: uppercase;
+  font-size: x-large;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 0.5mm;
+  font-family: "Arial Rounded MT";
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 10px;
+  width: auto;
+  min-width: 100px;
+  max-width: 500px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+#button {
+  width: 50px;
+  height: 50px;
+  display: block;
+  visibility: visible;
+  background-image: url("add.png");
+  background-attachment: scroll;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 40px 40px;
+  background-color: #e5e5e5;
+  float: right;
+  border-radius: 10px;
+  box-shadow: 7px 7px 10px 0px #a8a9a8;
+  z-index: 1;
+  position: relative;
+}
+
+#button:hover {
+  background-color: #d4d4d4;
+transition: all 0.4s ease 0s;
+}
+
+#button:active {
+  background-color: #a4a4a4;
+}
+
+#body {
+  background-color: #f5fcfd;
+}
+
+.listItemFlex {
+  display: inline-flex;
+  justify-content: space-between;
+  flex-grow: 0;
+  flex-basis: 0%;
+  order: 0;
+  align-items: stretch;
+  align-self: stretch;
+  flex-direction: row;
+  width: 95%;
+}
+
+.listItem {
+  width: 94%;
+  font-family: "Arial Rounded MT";
+  text-align: left;
+  font-size: large;
+  background-color: #e5e5e5;
+  list-style-type: none;
+  border-radius: 10px;
+  padding-left: 10px;
+  padding-bottom: 10px;
+}
+
+.s1ider {
+  width: 70%;
+}
+
+.listItemHeading {
+  top: 10px;
+  position: relative;
+}
+
+.list {
+  min-height: 180px;
+  max-height: 1100px;
+  overflow-y: scroll;
+  width: 550px;
+  text-align: center;
+  left: 0%;
+  margin-left: -10px;
+}
+
+#menu_photo, #menu_text, #menu_setting {
+  background-attachment: scroll;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 50px 50px;
+  width: 50px;
+  height: 50px;
+  background-color: #e5e5e5;
+  border-radius: 10px;
+  padding: 30px;
+  border-style: none;
+}
+
+#menu_photo:hover, #menu_text:hover, #menu_setting:hover {
+  background-color: #d4d4d4;
+transition: all 0.4s ease 0s;
+}
+
+#menu_photo:active, #menu_text:active, #menu_setting:active {
+  background-color: #a4a4a4;
+}
+
+#menu_photo {
+  background-image: url("photo.png");
+}
+
+#menu_text {
+  background-image: url("description.png");
+}
+
+#menu_setting {
+  background-image: url("menu.png");
+}
+
+#menu_button_flex {
+  display: flex;
+  justify-content: space-between;
+}
+
+#menu {
+  width: 70%;
+  padding-top: 20px;
+  margin-left: 20px;
+  margin-right: 20px;
+  flex-direction: column;
+  height: 100px;
+  justify-content: space-around;
+  display: flex;
+}
+
+#menu_indicator {
+  height: 10px;
+  background-color: #d4d4d4;
+  width: 60px;
+  border-radius: 10px;
+  float: left;
+}
+
+#upload {
+  display: none;
+}
+
+#canvas {
+  width: 100%;
+  background-color: #e5fff3;
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  height: 100%;
+}
+
+.dimensionsText {
+  font-style: normal;
+  color: #666666;
+  font-family: "Calibri";
+  font-weight: normal;
+  display: flex;
+  align-self: center;
+  justify-content: space-between;
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 160px;
+}
+
+.number {
+  border-radius: 5px;
+  width: 100px;
+}
+
+.checkBox {
+  display: flex;
+  width: 50px;
+  font-weight: normal;
+  font-family: "Calibri";
+  color: #666666;
+  margin-left: 5px;
+}
+
+</style></head>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<body id="body">
+    <center>
+      <h2 id="heading"> Laser Engraver </h2>
+      <div class="canvasDiv"> <canvas id="canvas" width="1000" height="1000"></canvas> <input
+
+          id="upload" type="file"> <label for="upload" id="button"></label> </div>
+      <div>
+        <ul role="list" class="list">
+          <li class="listItem">
+            <h4 class="listItemHeading">Dimensions</h4>
+            <div class="listItemFlex">
+              <div class="checkBox">Auto<input checked="checked" id="autoscale"
+
+                  type="checkbox"></div>
+              <div class="dimensionsText">
+                <div>L</div>
+                <input class="number" id="length" type="number"><span>mm</span></div>
+              <div class="dimensionsText">
+                <div>W</div>
+                <input class="number" id="width" type="number"><span>mm</span></div>
+            </div>
+          </li>
+          <li class="listItem">
+            <h4 class="listItemHeading">Brightness</h4>
+            <div class="listItemFlex"><img src="light.png"
+
+                style="width: 28px; height: 28px;"> <input class="s1ider" min="0"
+
+                max="10" value="0" type="range">
+              <div id="result">0</div>
+            </div>
+          </li>
+          <li class="listItem">
+            <h4 class="listItemHeading">Contrast</h4>
+            <div class="listItemFlex"><img src="brightness.png"
+
+                style="width: 28px; height: 28px;" alt="brightness" title="brightness">
+              <input class="s1ider" min="0" max="10" value="0" type="range">
+              <div id="result">0</div>
+            </div>
+          </li>
+          <li class="listItem">
+            <h4 class="listItemHeading">Cut-Off</h4>
+            <div class="listItemFlex"><img src="cut.png" style="width: 28px; height: 28px;"
+
+                alt="cut" title="cut"> <input class="s1ider" min="0" max="255"
+
+                value="0" type="range">
+              <div id="result">0</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div id="menu">
+        <div>
+          <div id="menu_indicator"> </div>
+        </div>
+        <div id="menu_button_flex"> <button id="menu_photo"> </button> <button
+
+            id="menu_text"> </button> <button id="menu_setting"> </button> </div>
+      </div>
+    </center>
+    <script>
+      const input = document.querySelector("#upload");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      const homeOffset = 30;
+      let xoff = 0.0, yoff = 0.0;
+      let dragging = -1;
+      let scale = 250;
+      
+      let canvas2 = document.createElement('canvas');
+      let ctx2 = canvas2.getContext('2d');
+      canvas2.width = 0;
+      canvas2.height = 0;
+
+      let imgX = 100, imgY = 100;   // image start psoition
+      let imgWidth = 0, imgHeight = 0;
+      let aspect = 0;
+
+      const length = document.getElementById("length");
+      const width = document.getElementById("width");
+      const auto = document.getElementById("autoscale");
+      length.value = 100;
+
+      const ongoingTouches = [];
+      let identifier = 0;
+      
+      render(xoff, yoff);
+      
+      //..........Handle Add Images..................................................
+      input.addEventListener("change", () => {
+        let reader = new FileReader();
+        reader.readAsDataURL(input.files[0]);
+        reader.addEventListener("load", () => {
+          let img = new Image;
+          img.src = reader.result;
+          img.onload = function(){
+            //convert to black and white
+            canvas2.width = img.width;
+            canvas2.height = img.height;
+            ctx2.drawImage(img, 0, 0);
+            let imgData = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
+            for (let i = 0; i < imgData.data.length; i += 4) {
+              let colour = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2])/3;
+              imgData.data[i] = colour;
+              imgData.data[i + 1] = colour;
+              imgData.data[i + 2] = colour;
+            }
+            ctx2.putImageData(imgData, 0, 0);
+            aspect = img.width/img.height;
+            handleLengthChange(true);
+            // render(xoff, yoff);
+          }
+        });
+      });
+      //.............................................................................
+
+      //.........Handle Scaling................................................
+      length.addEventListener("change", ()=>{handleLengthChange(auto.checked)});
+      function handleLengthChange(auto){
+        if(auto){
+          width.value = imgWidth = length.value * aspect;
+          imgHeight = length.value;
+        }
+        else imgHeight = length.value;
+        render(xoff, yoff);
+      }
+
+      width.addEventListener("change", ()=>{handleWidthChange(auto.checked)});
+      function handleWidthChange(auto){
+        if(auto){
+          length.value = imgHeight = width.value / aspect;
+          imgWidth = width.value;
+        }
+        else imgWidth = width.value;
+        render(xoff, yoff);
+      }
+      //.............................................................................
+
+      //........Srolling and Panning................................................
+      function inputScroll(deltaY){
+        scale += deltaY * -0.1;
+        if(scale < 250) scale = 250;
+        if(scale > 1000) scale = 1000;
+        render(xoff, yoff);
+      }
+      
+      function inputDown(clientX, clientY){
+        const rect = canvas.getBoundingClientRect();
+        let xdown = clientX - rect.left;
+        let ydown = canvas.clientWidth - (clientY - rect.top);
+        if(checkPosInImage(xdown, ydown)) dragging = 0; // started drag over image
+        else dragging = 1;
+      }
+
+      function inputUp(){
+        dragging = -1;
+      }
+
+      function inputMove(movementX, movementY){
+        if(dragging === 0){
+          imgX += movementX * 1;
+          imgY += movementY * -1;
+          render(xoff, yoff);
+        }
+        else if(dragging === 1) {
+
+          xoff += movementX * -1;
+          yoff += movementY * 1;
+
+          // prevent x and y from going below 0
+          if(xoff < 0) xoff = 0;
+          if(yoff < 0) yoff = 0;
+          render(xoff, yoff);
+        }
+      }
+
+      canvas.onwheel = function (evt){
+        evt.preventDefault()
+        inputScroll(evt.deltaY);
+      }
+
+
+      canvas.onmousedown = function(e){
+        e.preventDefault();
+        inputDown(e.clientX, e.clientY);
+      }
+      canvas.ontouchstart = function(e){
+        e.preventDefault();
+        const touches = e.changedTouches;
+        identifier = touches[0].identifier;
+        inputDown(touches[0].clientX, touches[0].clientY);
+        for(let i = 0; i < touches.length; i ++){
+          ongoingTouches.push(copyTouch(touches[i]));
+        }
+      }
+
+      canvas.onmouseup = inputUp;
+      canvas.onmouseleave = inputUp;
+      canvas.ontouchend = function(e){
+        e.preventDefault();
+        const touches = e.changedTouches;
+        for(let i = 0; i < touches.length; i ++){
+          let idx = ongoingTouchIndexById(touches[i].identifier);
+          if(idx >= 0) ongoingTouches.splice(idx, 1);
+          if (idx === identifier) inputUp();
+        }
+      }
+
+      canvas.onmousemove = function (e){
+        e.preventDefault();
+        inputMove(e.movementX, e.movementY);
+      }
+
+      canvas.ontouchmove = function(e){
+        e.preventDefault();
+        const touches = e.changedTouches;
+
+        if(touches.length === 2){   // handle zooming
+          let idx0 = ongoingTouchIndexById(touches[0].identifier);
+          let idx1 = ongoingTouchIndexById(touches[1].identifier);
+
+          let dist0 = distance(ongoingTouches[idx0].clientX, ongoingTouches[idx0].clientY, ongoingTouches[idx1].clientX, ongoingTouches[idx1].clientY);
+          let dist1 = distance(touches[0].clientX, touches[0].clientY, touches[1].clientX, touches[1].clientY);
+          
+          inputScroll((dist0 - dist1) * 1.5);
+        }
+
+        if(touches.length > 1) return;
+
+        for(let i = 0; i < touches.length; i++){
+          let idx = ongoingTouchIndexById(touches[i].identifier);
+          if(touches[i].identifier === identifier){  // first touch, handle drag movement
+            inputMove(touches[i].clientX - ongoingTouches[idx].clientX, touches[i].clientY - ongoingTouches[idx].clientY);
+          }
+
+          console.log("touches: " + i + " touch.len: " + touches.length);
+          if(idx >= 0) ongoingTouches.splice(idx, 1, copyTouch(touches[i])); 
+        }
+        // console.log("touches: " + e.touches[0]);
+      }
+
+      function copyTouch({ identifier, clientX, clientY }) {
+        return { identifier, clientX, clientY };
+      }
+      function ongoingTouchIndexById(idToFind) {
+        for (let i = 0; i < ongoingTouches.length; i++) {
+          const id = ongoingTouches[i].identifier;
+
+          if (id === idToFind) return i;
+        }
+        return -1; // not found
+      }
+      function distance(x1, y1, x2, y2){
+        return Math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)));
+      }
+
+      //.............................................................................
+      
+
+      // render all items on the canvas
+      function render(x, y){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+
+        renderImage(x, y);
+        renderLines(x, y);
+      }
+
+      // render image and boundary
+      function renderImage(x, y){
+        if(canvas2.height > 0){ 
+          let i = (imgX * scale/100) - x + homeOffset;
+          let j = (imgY * scale/100) - y + (imgHeight * scale/100) + homeOffset;
+          ctx.drawImage(canvas2, i, shiftY(j), imgWidth * scale/100, imgHeight * scale/100);
+          // ctx.putImageData(imgData, i, shiftY(j), 0, 0, imgWidth * scale/100, imgHeight * scale/100);
+          ctx.setLineDash([6, 3]);
+          ctx.strokeStyle = '#ff5959'
+          ctx.strokeRect(i, shiftY(j), imgWidth * scale/100, imgHeight * scale/100);
+        }
+      }
+
+      // check if the position is on the image
+      function checkPosInImage(x, y){
+        if(canvas2.width <= 0 || canvas2.height <= 0) return false;
+
+        //transform x, y to canvas x, y
+        x *= canvas.width/canvas.clientWidth;
+        y *= canvas.height/canvas.clientHeight;
+
+        let i = (imgX * scale/100) - xoff + homeOffset;
+        let j = (imgY * scale/100) - yoff + homeOffset;
+
+        if(x < i || x > i + (imgWidth * scale/100)) return false;
+        else if ((y < j || y > j + (imgHeight * scale/100))) return false;
+        else return true;
+      }
+
+      // render cartesian coordinates, should be rendered last
+      function renderLines(x, y){
+        ctx.font = homeOffset + "px Arial";
+        
+        itr = canvas.width/scale
+        const subitr = 10;
+        
+        let startX = Math.ceil(x/scale);
+        for(let i = startX; i < itr + startX + 1; i++){
+          ctx.beginPath();
+          ctx.setLineDash([10, 6]);
+          ctx.strokeStyle = '#000000';
+          ctx.moveTo((i*scale) - x + homeOffset, shiftY(homeOffset));
+          ctx.lineTo((i*scale) - x + homeOffset, shiftY(canvas.height));
+          ctx.stroke();
+          if(i != 0) ctx.fillText(i, (i * scale) - 8 - x + homeOffset, shiftY(0));
+
+          // sub iterations
+          let unitDist = scale/subitr;
+          for(let j = 1; j < subitr; j++){
+            let xpos = ((i - 1)*scale) - x + homeOffset + (unitDist * j);
+            if(xpos > homeOffset){
+              ctx.beginPath();
+              ctx.setLineDash([6, 6]);
+              ctx.strokeStyle = '#888888';
+              ctx.moveTo(xpos, shiftY(homeOffset));
+              ctx.lineTo(xpos, shiftY(canvas.height));
+              ctx.stroke();
+            }
+          }
+        }
+        
+        let startY = Math.ceil(y/scale);
+        for(let i = startY; i < itr + startY + 1; i++){
+          ctx.beginPath();
+          ctx.setLineDash([10, 6]);
+          ctx.strokeStyle = '#000000';
+          ctx.moveTo(homeOffset, shiftY((i*scale) - y + homeOffset));
+          ctx.lineTo(canvas.width, shiftY((i*scale) - y + homeOffset));
+          ctx.stroke();
+          if(i != 0) ctx.fillText(i, 0, shiftY((i * scale) - 8 - y + homeOffset));
+
+          // sub iterations
+          let unitDist = scale/subitr;
+          for(let j = 1; j < subitr; j++){
+            let ypos = ((i - 1)*scale) - y + homeOffset + (unitDist * j);
+            if(ypos > homeOffset){
+              ctx.beginPath();
+              ctx.setLineDash([6, 6]);
+              ctx.strokeStyle = '#888888';
+              ctx.moveTo(homeOffset, shiftY(ypos));
+              ctx.lineTo(canvas.width, shiftY(ypos));
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      // shift Y coordinate to start from bottom
+      function shiftY(y){
+        return canvas.height - y;
+      }
+
+      //........Handle Sizing..........................................................
+      let canvasDiv = document.querySelector('.canvasDiv');
+      let list = document.querySelector('.list');
+      let menu = document.querySelector('#menu');
+      let heading = document.querySelector('#heading');
+      if(window.innerWidth < 1000) {
+        canvasDiv.style.width = canvasDiv.style.height = Math.floor(0.8 * window.innerWidth).toString() + "px";
+        list.style.width = Math.floor(0.9 * window.innerWidth).toString() + "px";
+        menu.style.width = Math.floor(0.7 * window.innerWidth).toString() + "px";
+        list.style.height = (window.innerHeight - canvasDiv.clientHeight - menu.clientHeight - heading.clientHeight - 100).toString() + "px";
+
+        if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
+          menu.style.marginLeft = menu.style.marginRight = Math.floor((window.innerWidth - menu.clientWidth)/2).toString() + "px";
+          canvasDiv.style.marginLeft = canvasDiv.style.marginRight = Math.floor((window.innerWidth - canvasDiv.clientWidth)/2).toString() + "px";
+          heading.style.width = heading.clientWidth + "px";
+          heading.style.marginLeft = heading.style.marginRight = Math.floor((window.innerWidth - heading.clientWidth)/2).toString() + "px";
+        }
+      }
+      else {
+          list.style.width = "550px";
+          canvasDiv.style.width = canvasDiv.style.height = "500px";
+          menu.style.width = "400px";
+          list.style.height = "180px";
+        }
+      //...............................................................................
+
+    </script>
+  </body>
+</html>
