@@ -1,12 +1,21 @@
-
-#include <ESP8266WebServer.h>
-#include <ESP8266WiFi.h>
+// #include <WebSocketsServer.h>
+// #include <Hash.h>
+// #include <ESP8266WebServer.h>
+// #include <ESP8266WiFi.h>
+// Libraries for SD card
+#include "FS.h"
+#include "SD.h"
+#include <WebServer.h>
+#include <WiFi.h>
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "HelperClasses.cpp"
 #include "qrcode.h"
+#include <WebSocketsServer.h>
+
+// #include <SD.h>
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -101,7 +110,7 @@ const unsigned char keyboard[] = {
 };
 
 // List of taken states
-// 0,3,4,5,6,7,8,9,10,11
+// 0,3,4,5,6,7,8,9,10,11,12
 
 MenuItem Items[] = {
   MenuItem(0, "FOLDERS", folder, 0),
@@ -142,9 +151,14 @@ MenuItem HotSpotSettings[] = {
 #define KeyBrdXpad    4
 #define KeyBrdYpad    25
 
-#define outputA D8
-#define outputB D7
-#define outputC D6
+#define outputA 27 // prev D8
+#define outputB 26 // prev D7
+#define outputC 25 // prev D6
+
+#define cs 5
+// #define miso D3
+// #define mosi D4
+// #define sck D5
 
 int listCentre = 20;
 int dir = 1;
@@ -173,15 +187,58 @@ char ssid[15] = "RFAID";
 char *password = "12345678";
 uint8_t max_connections=8;//Maximum Connection Limit for AP
 int current_stations=0, new_stations=0;
-ESP8266WebServer server(80);   //instantiate server at port 80 (http port)
+WebServer server(80);   //instantiate server at port 80 (http port)
+WebSocketsServer  webSocket = WebSocketsServer(81);
 
+HardwareSerial grbl(2);
+char grblBuffer[100];
 
-void ICACHE_RAM_ATTR CountTicks();
-void ICACHE_RAM_ATTR ButtonPress();
+hw_timer_t *My_timer = NULL;
+void IRAM_ATTR onEncoderChange(){
+  aState = digitalRead(outputA);
+  if (digitalRead(outputB) != aState) { 
+    counter ++;
+  } 
+  else {
+    counter --;
+  }
+}
+
+// void IRAM_ATTR CountTicks();
+// void IRAM_ATTR ButtonPress();
+void IRAM_ATTR CountTicks(){
+  unsigned long interruptTime = millis();
+  if(interruptTime - lastInterruptTime > 50){
+    timerAlarmEnable(My_timer); //Just Enable
+  }
+  lastInterruptTime = interruptTime;
+}
+
+void IRAM_ATTR ButtonPress(){
+  unsigned long pressTime = millis();
+  if(pressTime - lastPress > 500){
+    unsigned long pressTime = millis();
+    if(selectState == 10) {ProcessKeyboardInput(); lastPress = pressTime; return;}
+    if(item < 0) return;
+    if(selectState == 0) selectState = Items[item].NewState;
+    else if(selectState == 3) selectState = Settings[item].NewState;
+    else if(selectState == 4) selectState = HotSpotSettings[item].NewState;
+    else if(selectState == 8) {selectState = 12; lastPress = pressTime; return;}// flip display colors
+
+  // reset counters
+  counter = 0;
+  item = 0;
+
+  // show Icon when opened
+  if(selectState == 3 || selectState == 4) counter =-2;
+  }
+  lastPress = pressTime;
+}
 
 void setup() {
   Serial.begin(9600);
-
+  grbl.begin(115200);
+  // Wire.begin(D4, D3);
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     Serial.println(F("SSD1306 allocation failed"));
@@ -189,17 +246,147 @@ void setup() {
   }
 
   pinMode (outputA,INPUT);
-  attachInterrupt(digitalPinToInterrupt(outputA), CountTicks, CHANGE);
+  attachInterrupt(outputA, CountTicks, CHANGE);
   pinMode (outputC,INPUT);
-  attachInterrupt(digitalPinToInterrupt(outputC), ButtonPress, HIGH);
+  attachInterrupt(outputC, ButtonPress, HIGH);
   pinMode (outputB,INPUT);
   // Reads the initial state of the outputA
   // aLastState = digitalRead(outputA);  
 
-
+  My_timer = timerBegin(0, 80, true);
+  timerAttachInterrupt(My_timer, &onEncoderChange, true);
+  timerAlarmWrite(My_timer, 2000, false);
 
   display.clearDisplay();
+
+  server.on("/", handleMain);
+  server.on("/add.png", [](){ReadSend("/add.png");});
+  server.on("/brightness.png", [](){ReadSend("/brightness.png");});
+  server.on("/cut.png", [](){ReadSend("/cut.png");});
+  server.on("/description.png", [](){ReadSend("/description.png");});
+  server.on("/light.png", [](){ReadSend("/light.png");});
+  server.on("/menu.png", [](){ReadSend("/menu.png");});
+  server.on("/photo.png", [](){ReadSend("/photo.png");});
+  server.on("/arrow.png", [](){ReadSend("/arrow.png");});
+  server.on("/home.png", [](){ReadSend("/home.png");});
+  server.on("/action.png", [](){ReadSend("/action.png");});
+  server.on("/measure.png", [](){ReadSend("/measure.png");});
+  server.onNotFound(handleNotFound);
+  webSocket.onEvent(webSocketEvent);
+
+  // SPI.begin(sck, miso, mosi, cs); 
+  if (!SD.begin(cs)) {
+    Serial.println("Initialization failed!");
+  }
 }
+
+void handleMain() {
+  // server.send_P(200, "text/html", "<html><body><p>server testes</p></body></html>"  ); 
+  ReadSend("/Laser Engraver.html");
+}
+void handleNotFound() {
+  server.send(404,   "text/html", "<html><body><p>404 Error</p></body></html>" );
+}
+void ReadSend(String dir)
+{
+  File myFile = SD.open(dir);
+  size_t sent = server.streamFile(myFile, getContentType(dir));
+  myFile.close();
+}
+// void ReadSend(String dir)
+// {
+//   File myFile = SD.open(dir);
+//   char Packet[myFile.size() + 1];
+//   int endpos;
+//   if (myFile) 
+//   {
+//     for (int j = 0; j < myFile.size(); j++)
+//     {
+//       myFile.seek(j);
+//       Packet[j] = myFile.peek();
+//       endpos = j;
+//       yield();      
+//     }
+//     Packet[endpos+1] = '\0';
+//     server.send(200, "text/html", Packet);
+//   }
+//   else
+//   {
+//    Serial.println("e no work o");
+//   }
+//   myFile.close();
+// }
+
+//This functions returns a String of content type
+String getContentType(String filename) {
+  if (server.hasArg("download")) { // check if the parameter "download" exists
+    return "application/octet-stream";
+  } else if (filename.endsWith(".htm")) { //check if the string filename ends with ".htm"
+    return "text/html";
+  } else if (filename.endsWith(".html")) {
+    return "text/html";
+  } else if (filename.endsWith(".css")) {
+    return "text/css";
+  } else if (filename.endsWith(".js")) {
+    return "application/javascript";
+  } else if (filename.endsWith(".png")) {
+    return "image/png";
+  } else if (filename.endsWith(".gif")) {
+    return "image/gif";
+  } else if (filename.endsWith(".jpg")) {
+    return "image/jpeg";
+  } else if (filename.endsWith(".ico")) {
+    return "image/x-icon";
+  } else if (filename.endsWith(".xml")) {
+    return "text/xml";
+  } else if (filename.endsWith(".pdf")) {
+    return "application/x-pdf";
+  } else if (filename.endsWith(".zip")) {
+    return "application/x-zip";
+  } else if (filename.endsWith(".gz")) {
+    return "application/x-gzip";
+  }
+  return "text/plain";
+}
+
+
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+
+  switch (type) {
+    case WStype_DISCONNECTED:
+      Serial.printf("[%u] Disconnected!\n", num);
+      break;
+
+    case WStype_CONNECTED: {
+        IPAddress ip = webSocket.remoteIP(num);
+        Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+        // send message to client
+        webSocket.sendTXT(num, "0");
+      }
+      break;
+
+    case WStype_TEXT:
+      Serial.printf("[%u] get Text: %s\n", num, payload);
+      if(payload[0] == '1'){
+        grbl.write(24);
+      }
+      grbl.printf("%s\n", payload);
+      // send message to client
+      // webSocket.sendTXT(num, "message here");
+      // send data to all connected clients
+      // webSocket.broadcastTXT("message here");
+      break;
+      
+    case WStype_BIN:
+      Serial.printf("[%u] get binary length: %u\n", num, length);
+      // hexdump(payload, length);
+      // send message to client
+      // webSocket.sendBIN(num, payload, length);
+      break;
+  }
+
+}
+
 
 void loop() {
   switch(selectState){
@@ -224,6 +411,7 @@ void loop() {
       break;
     case 8:
       HotspotInfo();
+      controlLoop();
       break;
     case 9:
       ChangeHotspotName();
@@ -234,8 +422,43 @@ void loop() {
     case 11:
       OnQR_CODE_Clicked();
       break;
+    case 12:
+      ProcessHotspotInfoButtonPress();
+      break;
   }
-  
+}
+
+void controlLoop(){
+  webSocket.loop();
+  server.handleClient();
+  HandleGRBL();
+}
+
+void HandleGRBL(){
+  //Check to see if anything is available in the serial receive buffer
+  //  while (grbl.available() > 0){
+  //    static unsigned int message_pos = 0;
+  //    char inByte = Serial.read();
+  //    if ( inByte != '\n' && (message_pos < 99) )
+  //    {
+  //      grblBuffer[message_pos] = inByte;
+  //      message_pos++;
+  //    }
+  //    //Full message received...
+  //    else
+  //    {
+  //      //Add null character to string
+  //      grblBuffer[message_pos] = '\0';
+  //      //Print the message (or do other things)
+  //      webSocket.broadcastTXT(grblBuffer);
+  //      //Reset for the next message
+  //      message_pos = 0;
+  //    }
+  //  }
+  if(grbl.available() > 0){
+    grbl.readBytes(grblBuffer, 100);
+    webSocket.broadcastTXT(grblBuffer);
+  }
 }
 
 void RenderMenu(){
@@ -407,6 +630,8 @@ void TurnOnHotspot(){
     Serial.println(max_connections);
     Serial.print("Access Point IP: ");
     Serial.println(WiFi.softAPIP());
+    server.begin();
+    webSocket.begin();
   }
   else
   {
@@ -464,6 +689,7 @@ void ProcessHotspotInfoButtonPress(){
   else{
     display.invertDisplay(!displayInverted);
     displayInverted = !displayInverted;
+    selectState = 8;
   }
 }
 
@@ -578,66 +804,4 @@ int CopyCharUntilStringTerminator(char A[], int startA, char B[], int startB){
     i++;
   }
   return i;
-}
-
-//................................................................................................................
-
-// void ReadRotaryEncoder(){
-//   aState = digitalRead(outputA); // Reads the "current" state of the outputA
-
-//    // If the previous and the current state of the outputA are different, that means a Pulse has occured
-//    if (aState != aLastState){     
-//      // If the outputB state is different to the outputA state, that means the encoder is rotating clockwise
-//      if (digitalRead(outputB) != aState) { 
-//        counter ++;
-//      } else {
-//        counter --;
-//      }
-//      Serial.print("Position: ");
-//      Serial.println(counter);
-//    } 
-//    aLastState = aState; // Updates the previous state of the outputA with the current state
-// }
-
-
-void CountTicks(){
-  unsigned long interruptTime = millis();
-  
-  if(interruptTime - lastInterruptTime > 10){
-    delay(1);
-    aState = digitalRead(outputA); // Reads the "current" state of the outputA  
-      // If the outputB state is different to the outputA state, that means the encoder is rotating clockwise
-    if (digitalRead(outputB) != aState) { 
-      counter ++;
-    } 
-    else {
-      counter --;
-    }
-    Serial.print("Position: ");
-    Serial.println(counter);
-
-    // keep track of interrrupt time
-    lastInterruptTime = interruptTime;
-  }
-}
-
-void ButtonPress(){
-  unsigned long pressTime = millis();
-  if(pressTime - lastPress > 500){
-    if(selectState == 10) {ProcessKeyboardInput(); lastPress = pressTime; return;}
-    if(item < 0) return;
-    if(selectState == 0) selectState = Items[item].NewState;
-    else if(selectState == 3) selectState = Settings[item].NewState;
-    else if(selectState == 4) selectState = HotSpotSettings[item].NewState;
-    else if(selectState == 8)  {ProcessHotspotInfoButtonPress(); lastPress = pressTime; return;}
-
-    // reset counters
-    counter = 0;
-    item = 0;
-
-    // show Icon when opened
-    if(selectState == 3 || selectState == 4) counter =-2;
-  }
-
-  lastPress = pressTime;
 }

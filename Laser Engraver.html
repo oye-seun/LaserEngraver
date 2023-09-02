@@ -232,11 +232,161 @@ transition: all 0.4s ease 0s;
   margin-left: 5px;
 }
 
-</style></head>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+.directionButtons{
+  width: 80px;
+  background-color: #e5e5e5;
+  border-radius: 10px;
+  box-shadow: 7px 7px 10px 0px #a8a9a8;
+  margin: 10px;
+  padding: 0;
+  border: none;
+}
+
+.directionButtons:hover {
+  background-color: #d4d4d4;
+  transition: all 0.4s ease 0s;
+}
+
+.directionButtons:active {
+  background-color: #a4a4a4;
+}
+
+.functionButtons{
+  background-color: #f2f2f2;
+  border-radius: 10px;
+  box-shadow: 7px 7px 10px 0px #a8a9a8;
+  width: 130px;
+  height: 28px;
+  padding: 0;
+  border: none;
+}
+
+/* .functionButtons:hover {
+  background-color: #d4d4d4;
+  transition: all 0.4s ease 0s;
+} */
+
+.functionButtons:active {
+  background-color: #a4a4a4;
+}
+
+#functionButtonsDiv{
+  padding-top: 100px;
+}
+
+#arrow2{
+  transform: rotate(-45deg);
+}
+#arrow3{
+  transform: rotate(45deg);
+}
+#arrow4{
+  transform: rotate(-90deg);
+}
+#arrow6{
+  transform: rotate(90deg);
+}
+#arrow7{
+  transform: rotate(-135deg);
+}
+#arrow8{
+  transform: rotate(180deg);
+}
+#arrow9{
+  transform: rotate(135deg);
+}
+
+.list2 {
+  min-height: 180px;
+  overflow-y: scroll;
+  width: 100%;
+  margin-left: -40px;
+}
+
+.listItemEdit {
+  width: 94%;
+  font-family: "Arial Rounded MT";
+  text-align: left;
+  font-size: large;
+  background-color: #e5fff3;
+  list-style-type: none;
+  border-radius: 10px;
+  padding-left: 10px;
+  padding-bottom: 10px;
+}
+
+.directionButtonsHolder {
+  width: 94%;
+  background-color: #e5e5e5;
+  border-radius: 10px;
+  padding-left: 10px;
+  padding-bottom: 10px;
+  list-style-type: none;
+  margin-top: 25px;
+}
+.directionButtonsRow {
+  width: 100%;
+  display: inline-flex;
+  justify-content: space-evenly;
+}
+
+.renameField {
+  width: 50%;
+  border-radius: 5px;
+}
+
+#centreBoard{
+  min-height: 300px;
+  max-height: 1100px;
+  width: 550px;
+  text-align: center;
+}
+
+.center1{
+  display: block;
+}
+
+.center2{
+  display: none;
+}
+
+#status{
+  min-height: 100px;
+  min-width: 200px;
+  width: 90%;
+  text-align: left;
+  font-size: large;
+  padding-left: 2.5%;
+  padding-right: 2.5%;
+  border-radius: 10px;
+  margin-left: 2.5%;
+  margin-right: 2.5%;
+  background-color: #f9f9f9;
+  align-self: center;
+}
+
+#statusContainer{
+  min-height: 100px;
+  min-width: 200px;
+  width: 94%;
+  text-align: left;
+  font-size: large;
+  padding-bottom: 10px;
+  border-radius: 10px;
+  background-color: #e5e5e5;
+  padding-left: 10px;
+}
+
+.result{
+  width: 50px;
+}
+
+</style>
+<meta name="viewport" content="width=500, user-scalable=0" />
+</head>
 <body id="body">
-    <center>
-      <h2 id="heading"> Laser Engraver </h2>
+    <center><h2 id="heading"> Laser Engraver </h2></center>
+    <center class="center1">
       <div class="canvasDiv"> <canvas id="canvas" width="1000" height="1000"></canvas> <input
 
           id="upload" type="file"> <label for="upload" id="button"></label> </div>
@@ -257,22 +407,30 @@ transition: all 0.4s ease 0s;
             </div>
           </li>
           <li class="listItem">
+            <h4 class="listItemHeading">Lines Per mm</h4>
+            <div class="listItemFlex"><img src="measure.png"
+
+                style="width: 28px; height: 28px;"> 
+                <input class="s1ider" min="1" max="20" value="4" type="range" id="lpmm">
+              <div class="result" id="lpmmResult">4</div>
+            </div>
+          </li>
+          <li class="listItem">
             <h4 class="listItemHeading">Brightness</h4>
             <div class="listItemFlex"><img src="light.png"
 
-                style="width: 28px; height: 28px;"> <input class="s1ider" min="0"
-
-                max="10" value="0" type="range">
-              <div id="result">0</div>
+                style="width: 28px; height: 28px;"> 
+                <input class="s1ider" min="0" max="150" value="0" type="range" id="brightness">
+              <div class="result" id="brightnessResult">0</div>
             </div>
           </li>
           <li class="listItem">
             <h4 class="listItemHeading">Contrast</h4>
             <div class="listItemFlex"><img src="brightness.png"
 
-                style="width: 28px; height: 28px;" alt="brightness" title="brightness">
+                style="width: 28px; height: 28px;">
               <input class="s1ider" min="0" max="10" value="0" type="range">
-              <div id="result">0</div>
+              <div class="result">0</div>
             </div>
           </li>
           <li class="listItem">
@@ -282,18 +440,99 @@ transition: all 0.4s ease 0s;
                 alt="cut" title="cut"> <input class="s1ider" min="0" max="255"
 
                 value="0" type="range">
-              <div id="result">0</div>
+              <div class="result">0</div>
             </div>
           </li>
         </ul>
       </div>
+    </center>
+    <center class="center2">
+      <!-- <label for="jobProgress">Completion</label>
+      <progress id="jobProgress" value="50" max="100"></progress> -->
+      <div id="centreBoard">
+
+        <div id="statusContainer">
+          <h4 class="listItemHeading">Serial Port</h4>
+          <p id="status"> this is a paragragh of GRBL replies</p>
+          <div class="listItemFlex">
+            <img src="action.png" style="width: 28px; height: 28px;"> 
+            <input class="renameField" type="text" id="fname">
+            <button type="button" class="functionButtons">Send</button> 
+          </div>
+        </div>
+  
+        <div class="listItemEdit">
+          <h4 class="listItemHeading" id="currentJob">Job: </h4>
+          <div class="listItemFlex">
+            <img src="description.png" style="width: 28px; height: 28px;"> 
+            <input class="renameField" type="text" id="jobRename">
+            <button type="button" class="functionButtons">Rename</button> 
+          </div>
+        </div>
+        <ul role="list" class="list2">
+          <li class="listItem">
+            <h4 class="listItemHeading">Status</h4>
+            <div class="listItemFlex">
+              <button type="button" class="functionButtons">Unlock</button> 
+              <button type="button" class="functionButtons">Flush</button> 
+            </div>
+          </li>
+          <li class="listItem">
+            <h4 class="listItemHeading">Positioning</h4>
+            <div class="listItemFlex">
+              <button type="button" class="functionButtons">Frame</button> 
+              <button type="button" class="functionButtons">Focus</button>
+              <button type="button" class="functionButtons">Blink</button> 
+            </div>
+          </li>
+          <li class="listItem">
+            <h4 class="listItemHeading">Homing</h4>
+            <div class="listItemFlex">
+              <button type="button" class="functionButtons">Find Home</button> 
+              <button type="button" class="functionButtons">Set Home</button> 
+            </div>
+          </li>
+          <li class="directionButtonsHolder">
+            <div class="directionButtonsRow"> 
+              <button type="button" class="directionButtons" id="btn1"><img src="arrow.png" id="arrow2"></button> 
+              <button type="button" class="directionButtons" id="btn2"><img src="arrow.png" id="arrow1"></button> 
+              <button type="button" class="directionButtons" id="btn3"><img src="arrow.png" id="arrow3"></button> 
+            </div>
+            <div class="directionButtonsRow"> 
+              <button type="button" class="directionButtons" id="btn4"><img src="arrow.png" id="arrow4"></button> 
+              <button type="button" class="directionButtons" id="btn5"><img src="home.png" ></button> 
+              <button type="button" class="directionButtons" id="btn6"><img src="arrow.png" id="arrow6"></button> 
+            </div>
+            <div class="directionButtonsRow"> 
+              <button type="button" class="directionButtons" id="btn7"><img src="arrow.png" id="arrow7"></button> 
+              <button type="button" class="directionButtons" id="btn8"><img src="arrow.png" id="arrow8"></button> 
+              <button type="button" class="directionButtons" id="btn9"><img src="arrow.png" id="arrow9"></button> 
+            </div>
+          </li>
+          <li class="listItem">
+            <h4 class="listItemHeading">Operation</h4>
+            <div class="listItemFlex">
+              <button type="button" class="functionButtons">Start</button> 
+              <button type="button" class="functionButtons">Pause</button>
+              <button type="button" class="functionButtons">End</button>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+    </center>
+
+
+    <center>
       <div id="menu">
         <div>
           <div id="menu_indicator"> </div>
         </div>
-        <div id="menu_button_flex"> <button id="menu_photo"> </button> <button
-
-            id="menu_text"> </button> <button id="menu_setting"> </button> </div>
+        <div id="menu_button_flex"> 
+          <button id="menu_photo"> </button> 
+          <!-- <button id="menu_text"> </button>  -->
+          <button id="menu_setting"> </button> 
+        </div>
       </div>
     </center>
     <script>
@@ -309,6 +548,8 @@ transition: all 0.4s ease 0s;
       let ctx2 = canvas2.getContext('2d');
       canvas2.width = 0;
       canvas2.height = 0;
+      let imgData = new ImageData(10, 10);
+      let imgArr = new Uint8ClampedArray(1);
 
       let imgX = 100, imgY = 100;   // image start psoition
       let imgWidth = 0, imgHeight = 0;
@@ -336,14 +577,18 @@ transition: all 0.4s ease 0s;
             canvas2.width = img.width;
             canvas2.height = img.height;
             ctx2.drawImage(img, 0, 0);
-            let imgData = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
+            imgData = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
             for (let i = 0; i < imgData.data.length; i += 4) {
               let colour = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2])/3;
               imgData.data[i] = colour;
               imgData.data[i + 1] = colour;
               imgData.data[i + 2] = colour;
             }
-            ctx2.putImageData(imgData, 0, 0);
+
+            // put the image in
+            rasterImage();
+
+            // ctx2.putImageData(imgData, 0, 0);
             aspect = img.width/img.height;
             handleLengthChange(true);
             // render(xoff, yoff);
@@ -351,6 +596,38 @@ transition: all 0.4s ease 0s;
         });
       });
       //.............................................................................
+
+
+      function rasterImage(){
+
+        const arr = new Uint8ClampedArray(imgData.data.length);
+        for (let i = 0; i < arr.length; i += 4) {
+          arr[i + 0] = imgData.data[i + 0];
+          arr[i + 1] = imgData.data[i + 1];
+          arr[i + 2] = imgData.data[i + 2];
+          arr[i + 3] = imgData.data[i + 3];
+          if (imgData.data[i + 3] === 0) arr[i + 3] = 1;
+          else arr[i + 3] = 0;
+        }
+        
+        let arrLen = Math.round(lPmm.value * length.value);
+        let pxPerLine = canvas2.height/arrLen;
+        imgArr = new Uint8ClampedArray(canvas2.width * arrLen);
+        for (let i = 0; i < arrLen; i++) {
+          let yelement = Math.round( i * pxPerLine * 4 * canvas2.width);
+          for(let j = 0; j < canvas2.width; j++){
+            imgArr[(i*arrLen) + j] =  imgData.data[yelement + (j*4)];
+
+            let pos = (yelement +  (j*4) + 3);
+            if(pos < imgData.data.length){
+              if(arr[pos] === 1) arr[pos] = 0;
+              else arr[pos] = 255;
+            }
+          }
+        }
+        let newImgData = new ImageData(arr, imgData.width, imgData.height, imgData.settings);
+        ctx2.putImageData(newImgData, 0, 0);
+      }
 
       //.........Handle Scaling................................................
       length.addEventListener("change", ()=>{handleLengthChange(auto.checked)});
@@ -470,8 +747,6 @@ transition: all 0.4s ease 0s;
           if(touches[i].identifier === identifier){  // first touch, handle drag movement
             inputMove(touches[i].clientX - ongoingTouches[idx].clientX, touches[i].clientY - ongoingTouches[idx].clientY);
           }
-
-          console.log("touches: " + i + " touch.len: " + touches.length);
           if(idx >= 0) ongoingTouches.splice(idx, 1, copyTouch(touches[i])); 
         }
         // console.log("touches: " + e.touches[0]);
@@ -492,7 +767,42 @@ transition: all 0.4s ease 0s;
         return Math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)));
       }
 
-      //.............................................................................
+      //........Srolling and Panning END....................................................................
+
+
+      //.........Lines Per MM...............................................................................
+      const lPmm = document.getElementById("lpmm");
+      lPmm.addEventListener("input", ()=>{
+        document.getElementById("lpmmResult").innerHTML = lPmm.value;
+      })
+
+      lPmm.addEventListener("change", ()=>{
+        rasterImage();
+        render(xoff, yoff);
+      })
+      //....................................................................................................
+
+
+      //..........Brightness.................................................................................
+      const brightness = document.getElementById("brightness");
+      brightness.addEventListener("change", ()=>{
+        const arr = new Uint8ClampedArray(imgData.data.length);
+        for (let i = 0; i < arr.length; i += 4) {
+          arr[i + 0] = imgData.data[i + 0] + (brightness.value/2);
+          arr[i + 1] = imgData.data[i + 1] + (brightness.value/2);
+          arr[i + 2] = imgData.data[i + 2] + (brightness.value/2);
+          arr[i + 3] = imgData.data[i + 3];
+        }
+
+        let newImgData = new ImageData(arr, imgData.width, imgData.height, imgData.settings);
+        ctx2.putImageData(newImgData, 0, 0);
+        render(xoff, yoff);
+      })
+
+      brightness.addEventListener("input", ()=>{
+        document.getElementById("brightnessResult").innerHTML = brightness.value;
+      })
+      //..........Brightness END.............................................................................
       
 
       // render all items on the canvas
@@ -507,6 +817,16 @@ transition: all 0.4s ease 0s;
       // render image and boundary
       function renderImage(x, y){
         if(canvas2.height > 0){ 
+          let i = (imgX * scale/100) - x + homeOffset;
+          let j = (imgY * scale/100) - y + (imgHeight * scale/100) + homeOffset;
+          ctx.drawImage(canvas2, i, shiftY(j), imgWidth * scale/100, imgHeight * scale/100);
+          // ctx.putImageData(imgData, i, shiftY(j), 0, 0, imgWidth * scale/100, imgHeight * scale/100);
+          ctx.setLineDash([6, 3]);
+          ctx.strokeStyle = '#ff5959'
+          ctx.strokeRect(i, shiftY(j), imgWidth * scale/100, imgHeight * scale/100);
+        }
+
+        if(imgArr.length > 1){
           let i = (imgX * scale/100) - x + homeOffset;
           let j = (imgY * scale/100) - y + (imgHeight * scale/100) + homeOffset;
           ctx.drawImage(canvas2, i, shiftY(j), imgWidth * scale/100, imgHeight * scale/100);
@@ -596,20 +916,28 @@ transition: all 0.4s ease 0s;
         return canvas.height - y;
       }
 
+      //........
+
       //........Handle Sizing..........................................................
       let canvasDiv = document.querySelector('.canvasDiv');
       let list = document.querySelector('.list');
       let menu = document.querySelector('#menu');
       let heading = document.querySelector('#heading');
+      let centreBoard = document.querySelector('#centreBoard');
+      let list2 = document.querySelector('.list2');
+
       if(window.innerWidth < 1000) {
         canvasDiv.style.width = canvasDiv.style.height = Math.floor(0.8 * window.innerWidth).toString() + "px";
         list.style.width = Math.floor(0.9 * window.innerWidth).toString() + "px";
         menu.style.width = Math.floor(0.7 * window.innerWidth).toString() + "px";
+        centreBoard.style.width = Math.floor(0.9 * window.innerWidth).toString() + "px";
         list.style.height = (window.innerHeight - canvasDiv.clientHeight - menu.clientHeight - heading.clientHeight - 100).toString() + "px";
+        list2.style.height = (window.innerHeight - menu.clientHeight - heading.clientHeight - 417).toString() + "px";
 
         if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)){
-          menu.style.marginLeft = menu.style.marginRight = Math.floor((window.innerWidth - menu.clientWidth)/2).toString() + "px";
-          canvasDiv.style.marginLeft = canvasDiv.style.marginRight = Math.floor((window.innerWidth - canvasDiv.clientWidth)/2).toString() + "px";
+          menu.style.marginLeft = menu.style.marginRight = Math.floor((window.innerWidth * 0.3)/2).toString() + "px";
+          canvasDiv.style.marginLeft = canvasDiv.style.marginRight = Math.floor((window.innerWidth * 0.2)/2).toString() + "px";
+          centreBoard.style.marginLeft = centreBoard.style.marginRight = Math.floor((window.innerWidth * 0.1)/2).toString() + "px";
           heading.style.width = heading.clientWidth + "px";
           heading.style.marginLeft = heading.style.marginRight = Math.floor((window.innerWidth - heading.clientWidth)/2).toString() + "px";
         }
@@ -617,11 +945,68 @@ transition: all 0.4s ease 0s;
       else {
           list.style.width = "550px";
           canvasDiv.style.width = canvasDiv.style.height = "500px";
+          centreBoard.style.width = "550px";
+          list2.style.height = (window.innerHeight - menu.clientHeight - heading.clientHeight - 417).toString() + "px";
           menu.style.width = "400px";
           list.style.height = "180px";
-        }
+      }
+      //...............................................................................
+      
+
+
+
+      //.........Handle Switching Tabs.................................................
+      let center1 = document.querySelector('.center1');
+      let center2 = document.querySelector('.center2');
+      let menuIndicator = document.querySelector('#menu_indicator');
+      let menuPhoto = document.querySelector('#menu_photo');
+      menuPhoto.onclick = function(){
+        center1.style.display = "block";
+        center2.style.display = "none";
+        menuIndicator.style.float = "left";
+      }
+      let menu_settings = document.querySelector('#menu_setting')
+      menu_settings.onclick = function(){
+        center2.style.display = "block";
+        center1.style.display = "none";
+        menuIndicator.style.float = "right";
+      }
       //...............................................................................
 
+      //..........Attaching control buttons............................................
+      let btn1 = document.querySelector('#btn1');
+      btn1.onclick = function (){socket.send('1');}
+      let btn2 = document.querySelector('#btn2');
+      btn2.onclick = function (){socket.send('move 2');}
+      let btn3 = document.querySelector('#btn3');
+      btn3.onclick = function (){socket.send('move 3');}
+      let btn4 = document.querySelector('#btn4');
+      btn4.onclick = function (){socket.send('move 4');}
+      let btn6 = document.querySelector('#btn6');
+      btn6.onclick = function (){socket.send('move 6');}
+      let btn7 = document.querySelector('#btn7');
+      btn7.onclick = function (){socket.send('move 7');}
+      let btn8 = document.querySelector('#btn8');
+      btn8.onclick = function (){socket.send('move 8');}
+      let btn9 = document.querySelector('#btn9');
+      btn9.onclick = function (){socket.send('move 9');}
+
+      const command = document.getElementById("fname");
+      command.addEventListener("change", ()=>{
+        socket.send(command.value);
+      });
+      //...............................................................................
+
+      //..........WebSocket Communication..............................................
+      const socket = new WebSocket("ws:/" + "/" + location.host + ":81");
+      socket.onopen = function(e) {  console.log("[socket] socket.onopen "); };
+      socket.onerror = function(e) {  console.log("[socket] socket.onerror "); };
+      socket.onmessage = function(e) {  
+          console.log("[socket] " + e.data);
+          document.getElementById("status").innerHTML = e.data;
+      };
+
+      //...............................................................................
     </script>
   </body>
 </html>
