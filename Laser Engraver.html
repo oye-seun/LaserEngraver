@@ -354,6 +354,7 @@ transition: all 0.4s ease 0s;
   min-height: 100px;
   min-width: 200px;
   width: 90%;
+  overflow-y: scroll;
   text-align: left;
   font-size: large;
   padding-left: 2.5%;
@@ -379,6 +380,35 @@ transition: all 0.4s ease 0s;
 
 .result{
   width: 50px;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 10;
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.modal {
+  width: 300px;
+  height: 200px;
+  font-family: "Arial Rounded MT";
+  line-height: 200px;
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  margin-top: -100px;
+  margin-left: -150px;
+  background-color: #e5fff3;
+  border-radius: 40px;
+  text-align: center;
+  z-index: 11;
+}
+#sendElement{
+  display: none;
 }
 
 </style>
@@ -425,27 +455,30 @@ transition: all 0.4s ease 0s;
             </div>
           </li>
           <li class="listItem">
-            <h4 class="listItemHeading">Contrast</h4>
-            <div class="listItemFlex"><img src="brightness.png"
+            <h4 class="listItemHeading">FeedRate</h4>
+            <div class="listItemFlex"><img src="feedrate.png"
 
                 style="width: 28px; height: 28px;">
-              <input class="s1ider" min="0" max="10" value="0" type="range">
-              <div class="result">0</div>
+              <input class="s1ider" min="1" max="3000" value="500" type="range" id="feedrate">
+              <div class="result" id="feedrateResult">500</div>
             </div>
           </li>
           <li class="listItem">
-            <h4 class="listItemHeading">Cut-Off</h4>
-            <div class="listItemFlex"><img src="cut.png" style="width: 28px; height: 28px;"
-
-                alt="cut" title="cut"> <input class="s1ider" min="0" max="255"
-
-                value="0" type="range">
-              <div class="result">0</div>
+            <h4 class="listItemHeading">Power</h4>
+            <div class="listItemFlex"><img src="cut.png" style="width: 28px; height: 28px;" alt="cut" title="cut"> 
+              <input class="s1ider" min="15" max="100"value="0" type="range" id="power">
+              <div class="result" id="powerResult">15</div>
             </div>
           </li>
         </ul>
       </div>
     </center>
+
+    <div id="sendElement">
+      <div class="overlay"></div>
+      <div class="modal">SENDING</div>
+    </div>
+
     <center class="center2">
       <!-- <label for="jobProgress">Completion</label>
       <progress id="jobProgress" value="50" max="100"></progress> -->
@@ -473,8 +506,8 @@ transition: all 0.4s ease 0s;
           <li class="listItem">
             <h4 class="listItemHeading">Status</h4>
             <div class="listItemFlex">
-              <button type="button" class="functionButtons">Unlock</button> 
-              <button type="button" class="functionButtons">Flush</button> 
+              <button type="button" class="functionButtons" id="unlock">Unlock</button> 
+              <button type="button" class="functionButtons" id="flush">Flush</button> 
             </div>
           </li>
           <li class="listItem">
@@ -512,7 +545,7 @@ transition: all 0.4s ease 0s;
           <li class="listItem">
             <h4 class="listItemHeading">Operation</h4>
             <div class="listItemFlex">
-              <button type="button" class="functionButtons">Start</button> 
+              <button type="button" class="functionButtons" id="startButton">Start</button> 
               <button type="button" class="functionButtons">Pause</button>
               <button type="button" class="functionButtons">End</button>
             </div>
@@ -549,7 +582,10 @@ transition: all 0.4s ease 0s;
       canvas2.width = 0;
       canvas2.height = 0;
       let imgData = new ImageData(10, 10);
-      let imgArr = new Uint8ClampedArray(1);
+      let rasterImg = new ImageData(1, 1);
+      // let imgArr = new Uint8ClampedArray(1);
+      let arrLen = 0;
+      let pxPerLine = 0;
 
       let imgX = 100, imgY = 100;   // image start psoition
       let imgWidth = 0, imgHeight = 0;
@@ -605,28 +641,30 @@ transition: all 0.4s ease 0s;
           arr[i + 0] = imgData.data[i + 0];
           arr[i + 1] = imgData.data[i + 1];
           arr[i + 2] = imgData.data[i + 2];
-          arr[i + 3] = imgData.data[i + 3];
-          if (imgData.data[i + 3] === 0) arr[i + 3] = 1;
-          else arr[i + 3] = 0;
+          arr[i + 3] = 0;
+          // if (imgData.data[i + 3] === 0) arr[i + 3] = 1;
+          // else arr[i + 3] = 0;
         }
-        
-        let arrLen = Math.round(lPmm.value * length.value);
-        let pxPerLine = canvas2.height/arrLen;
-        imgArr = new Uint8ClampedArray(canvas2.width * arrLen);
+
+        arrLen = Math.round(lPmm.value * length.value);
+        pxPerLine = canvas2.height/arrLen;
+        // imgArr = new Uint8ClampedArray(canvas2.width * arrLen * 2);
         for (let i = 0; i < arrLen; i++) {
           let yelement = Math.round( i * pxPerLine * 4 * canvas2.width);
           for(let j = 0; j < canvas2.width; j++){
-            imgArr[(i*arrLen) + j] =  imgData.data[yelement + (j*4)];
+            // imgArr[(i*canvas2.width*2) + (j*2)] =  imgData.data[yelement + (j*4)];
+            // imgArr[(i*canvas2.width*2) + (j*2) + 1] =  imgData.data[yelement + (j*4) + 3];
 
             let pos = (yelement +  (j*4) + 3);
             if(pos < imgData.data.length){
-              if(arr[pos] === 1) arr[pos] = 0;
-              else arr[pos] = 255;
+              // if(arr[pos] === 1) arr[pos] = 0;
+              // else arr[pos] = 255;
+              arr[pos] = imgData.data[pos];
             }
           }
         }
-        let newImgData = new ImageData(arr, imgData.width, imgData.height, imgData.settings);
-        ctx2.putImageData(newImgData, 0, 0);
+        rasterImg = new ImageData(arr, imgData.width, imgData.height, imgData.settings);
+        ctx2.putImageData(rasterImg, 0, 0);
       }
 
       //.........Handle Scaling................................................
@@ -786,15 +824,15 @@ transition: all 0.4s ease 0s;
       //..........Brightness.................................................................................
       const brightness = document.getElementById("brightness");
       brightness.addEventListener("change", ()=>{
-        const arr = new Uint8ClampedArray(imgData.data.length);
+        const arr = new Uint8ClampedArray(rasterImg.data.length);
         for (let i = 0; i < arr.length; i += 4) {
-          arr[i + 0] = imgData.data[i + 0] + (brightness.value/2);
-          arr[i + 1] = imgData.data[i + 1] + (brightness.value/2);
-          arr[i + 2] = imgData.data[i + 2] + (brightness.value/2);
-          arr[i + 3] = imgData.data[i + 3];
+          arr[i + 0] = rasterImg.data[i + 0] + (brightness.value/2);
+          arr[i + 1] = rasterImg.data[i + 1] + (brightness.value/2);
+          arr[i + 2] = rasterImg.data[i + 2] + (brightness.value/2);
+          arr[i + 3] = rasterImg.data[i + 3];
         }
 
-        let newImgData = new ImageData(arr, imgData.width, imgData.height, imgData.settings);
+        let newImgData = new ImageData(arr, rasterImg.width, rasterImg.height, rasterImg.settings);
         ctx2.putImageData(newImgData, 0, 0);
         render(xoff, yoff);
       })
@@ -804,6 +842,20 @@ transition: all 0.4s ease 0s;
       })
       //..........Brightness END.............................................................................
       
+
+      //...........Feed Rate................................................................................
+      const feedrate = document.getElementById("feedrate");
+      feedrate.addEventListener("input", ()=>{
+        document.getElementById("feedrateResult").innerHTML = feedrate.value;
+      })
+      //....................................................................................................
+
+      //...........Power   ................................................................................
+      const power = document.getElementById("power");
+      power.addEventListener("input", ()=>{
+        document.getElementById("powerResult").innerHTML = power.value;
+      })
+      //....................................................................................................
 
       // render all items on the canvas
       function render(x, y){
@@ -826,7 +878,7 @@ transition: all 0.4s ease 0s;
           ctx.strokeRect(i, shiftY(j), imgWidth * scale/100, imgHeight * scale/100);
         }
 
-        if(imgArr.length > 1){
+        if(rasterImg.data.length > 10){
           let i = (imgX * scale/100) - x + homeOffset;
           let j = (imgY * scale/100) - y + (imgHeight * scale/100) + homeOffset;
           ctx.drawImage(canvas2, i, shiftY(j), imgWidth * scale/100, imgHeight * scale/100);
@@ -953,13 +1005,163 @@ transition: all 0.4s ease 0s;
       //...............................................................................
       
 
+      // //........GCODE..................................................................
+      // function generateGCode(){
+      //   TestImage();
+      //   return;
+      //   // socket.send('z');
+      //   let mmPerLine = 1/lPmm.value;
+      //   let mmPerPx = width.value/canvas2.width;
+      //   for (let i = 0; i < arrLen; i++) {
+      //     // socket.send("G00 X" + imgX  + " Y" + (imgY + (i*mmPerLine)));
+      //     console.log("G00 X" + imgX  + " Y" + (imgY + (i*mmPerLine)));
+      //     let yStart = i*canvas2.width*2;
+      //     for(let j = 0; j < canvas2.width - 1; j++){
+      //       let currentPX = (imgArr[yStart + (j*2)] + imgArr[yStart + (j*2) + 1]);
+      //       let nextPX = (imgArr[yStart + ((j + 1)*2)] + imgArr[yStart + ((j + 1)*2) + 1]);
+      //       console.log("current px: " + currentPX + " nextpx: " + nextPX);
+      //       if(currentPX  === nextPX){
+      //         continue;
+      //       }
+      //       else{
+      //         // if(imgArr[(i*arrLen) + (j*2)]  === 255) socket.send("G00 X" + (imgX + ((j+1)*mmPerPx)));
+      //         if(imgArr[yStart + (j*2) + 1] === 0) console.log("G00 X" + (imgX + ((j+1)*mmPerPx)) + " px value: " + imgArr[yStart + (j*2)]);
+      //         // else socket.send("G01 X" + (imgX + ((j+1)*mmPerPx))  + " S" + ((255-imgArr[(i*arrLen) + (j*2)])*0.3));
+      //         else console.log("G01 X" + (imgX + ((j+1)*mmPerPx))  + " S" + ((255-imgArr[yStart + (j*2)])*imgArr[yStart + (j*2)+1]*0.3) + " px value: " + imgArr[yStart + (j*2)]);
+      //       }
+      //     } 
 
+      //     // socket.send("G01 X" + (imgX + ((canvas2.width)*mmPerPx))  + " S" + ((255-imgArr[(i*arrLen) + canvas2.width - 1])*0.3));
+      //   }
+      //   // socket.send('y');
+      // }
+      // //...............................................................................
+
+
+      function generateGCode2(){   //this is deprecated
+        socket.send('z');
+        let mmPerLine = 1/lPmm.value;
+        let mmPerPx = width.value/canvas2.width;
+        socket.send("G90\n" +"G0 X0 Y0 F" + feedrate.value + "\n" + "M4 S0");
+        for (let i = 0; i < arrLen; i++) {
+          socket.send("G00 X" + imgX  + " Y" + (imgY + (i*mmPerLine)));
+          // console.log("G00 X" + imgX  + " Y" + (imgY + (i*mmPerLine)));
+          let yelement = Math.round( i * pxPerLine * 4 * canvas2.width);
+          for(let j = 0; j < canvas2.width; j++){
+
+            let rpos = (yelement +  (j*4));
+            let rpos2 = (yelement +  ((j+1)*4));
+            let apos = rpos + 3;
+            let apos2 = rpos2  + 3;
+            let currentPX = rasterImg.data[rpos];
+            let currentPXa = rasterImg.data[apos];
+
+            if(apos >= rasterImg.data.length || apos2 >= rasterImg.data.length){
+              continue;
+            }
+
+            // arr[pos] = imgData.data[pos];
+            if(currentPX + currentPXa  === rasterImg.data[rpos2] + rasterImg.data[apos2]){
+              // console.log("currentPX: " + currentPX + " nextpx: " + rasterImg.data[rpos2]);
+              // console.log("currentPX: " + rpos + " nextpx: " + rpos2);
+              continue;
+            }
+            else{
+              let x = (imgX + ((j+1)*mmPerPx));
+              let s = ((255-currentPX)*currentPXa* power.value * 10/65025);
+              if(currentPXa === 0) socket.send("G00 X" + x/* + " px value: " + currentPX*/);
+              // if(currentPXa === 0) console.log("G00 X" + x/* + " px value: " + currentPX*/);
+              else socket.send("G01 X" + x  + " S" +  s/*+ " px value: " + imgArr[yStart + (j*2)]*/);
+              // else console.log("G01 X" + x  + " S" +  s/*+ " px value: " + imgArr[yStart + (j*2)]*/);
+            }
+          }
+        }
+        socket.send("M5");
+        socket.send('y');
+      }
+
+      function generateGCode3(){
+        const formData = new FormData();
+        let mmPerLine = 1/lPmm.value;
+        let mmPerPx = width.value/canvas2.width;
+        let blob = new Blob(["G90\n" +"G0 X0 Y0 F" + feedrate.value + "\n" + "M4 S0\n"], { type: 'plain/text' });
+        
+
+
+        for (let i = 0; i < arrLen; i++) {
+          blob = new Blob([blob, "G00 X" + imgX  + " Y" + (imgY + (i*mmPerLine)) + "\n"], { type: 'plain/text' });
+
+          let yelement = Math.round( i * pxPerLine * 4 * canvas2.width);
+          for(let j = 0; j < canvas2.width; j++){
+
+            let rpos = (yelement +  (j*4));
+            let rpos2 = (yelement +  ((j+1)*4));
+            let apos = rpos + 3;
+            let apos2 = rpos2  + 3;
+            let currentPX = rasterImg.data[rpos];
+            let currentPXa = rasterImg.data[apos];
+
+            if(apos >= rasterImg.data.length || apos2 >= rasterImg.data.length){
+              continue;
+            }
+
+            // arr[pos] = imgData.data[pos];
+            if(currentPX + currentPXa  === rasterImg.data[rpos2] + rasterImg.data[apos2]){
+              // console.log("currentPX: " + currentPX + " nextpx: " + rasterImg.data[rpos2]);
+              // console.log("currentPX: " + rpos + " nextpx: " + rpos2);
+              continue;
+            }
+            else{
+              let x = (imgX + ((j+1)*mmPerPx));
+              let s = ((255-currentPX)*currentPXa* power.value * 10/65025);
+              if(currentPXa === 0)
+              { 
+                blob = new Blob([blob, "G00 X" + x + "\n"], { type: 'plain/text' });
+              }
+              // if(currentPXa === 0) console.log("G00 X" + x/* + " px value: " + currentPX*/);
+              else
+              {
+                 blob = new Blob([blob, "G01 X" + x  + " S" +  s + "\n"], { type: 'plain/text' });
+              }
+              // else console.log("G01 X" + x  + " S" +  s/*+ " px value: " + imgArr[yStart + (j*2)]*/);
+            }
+          }
+        }
+
+        blob = new Blob([blob, "M5" + "\n"], { type: 'plain/text' });
+        formData.append('file', blob, 'GCode1.txt');
+        const request = new XMLHttpRequest();
+        request.open('POST', '/fupload');
+        request.send(formData);
+      }
+
+
+      // function TestImage(){
+      //   const arr = new Uint8ClampedArray(arrLen * canvas2.width * 4);
+
+      //   let mmPerLine = 1/lPmm.value;
+      //   let mmPerPx = width.value/canvas2.width;
+      //   for (let i = 0; i < arrLen; i++) {
+      //     for(let j = 0; j < canvas2.width; j++){
+      //       let yStart = i*canvas2.width*4;
+      //       let aryStart = i*canvas2.width*2;
+      //       arr[yStart + (j*4)] = imgArr[aryStart + (j*2)];
+      //       arr[yStart + (j*4) + 1] = imgArr[aryStart + (j*2)];
+      //       arr[yStart + (j*4) + 2] = imgArr[aryStart + (j*2)];
+      //       arr[yStart + (j*4) + 3] = imgArr[aryStart + (j*2) + 1];
+      //     }
+      //   }
+      //   let newImgData = new ImageData(arr, canvas2.width, arrLen, imgData.settings);
+      //   ctx2.putImageData(newImgData, 0, 0);
+      //   render(xoff, yoff);
+      // }
 
       //.........Handle Switching Tabs.................................................
-      let center1 = document.querySelector('.center1');
-      let center2 = document.querySelector('.center2');
-      let menuIndicator = document.querySelector('#menu_indicator');
-      let menuPhoto = document.querySelector('#menu_photo');
+      const center1 = document.querySelector('.center1');
+      const center2 = document.querySelector('.center2');
+      const menuIndicator = document.querySelector('#menu_indicator');
+      const menuPhoto = document.querySelector('#menu_photo');
+      const sendElement = document.querySelector('#sendElement');
       menuPhoto.onclick = function(){
         center1.style.display = "block";
         center2.style.display = "none";
@@ -967,29 +1169,39 @@ transition: all 0.4s ease 0s;
       }
       let menu_settings = document.querySelector('#menu_setting')
       menu_settings.onclick = function(){
-        center2.style.display = "block";
-        center1.style.display = "none";
-        menuIndicator.style.float = "right";
+        sendElement.style.display = "block";
+        generateGCode3();
       }
       //...............................................................................
 
       //..........Attaching control buttons............................................
-      let btn1 = document.querySelector('#btn1');
-      btn1.onclick = function (){socket.send('1');}
-      let btn2 = document.querySelector('#btn2');
-      btn2.onclick = function (){socket.send('move 2');}
-      let btn3 = document.querySelector('#btn3');
-      btn3.onclick = function (){socket.send('move 3');}
-      let btn4 = document.querySelector('#btn4');
-      btn4.onclick = function (){socket.send('move 4');}
-      let btn6 = document.querySelector('#btn6');
-      btn6.onclick = function (){socket.send('move 6');}
-      let btn7 = document.querySelector('#btn7');
-      btn7.onclick = function (){socket.send('move 7');}
-      let btn8 = document.querySelector('#btn8');
-      btn8.onclick = function (){socket.send('move 8');}
-      let btn9 = document.querySelector('#btn9');
-      btn9.onclick = function (){socket.send('move 9');}
+      const btn1 = document.querySelector('#btn1');
+      btn1.onclick = function (){socket.send("$J=G91X-1.0Y1.0F" + feedrate.value);}
+      const btn2 = document.querySelector('#btn2');
+      btn2.onclick = function (){socket.send("$J=G91Y1.0F" + feedrate.value);}
+      const btn3 = document.querySelector('#btn3');
+      btn3.onclick = function (){socket.send("$J=G91X1.0Y1.0F" + feedrate.value);}
+      const btn4 = document.querySelector('#btn4');
+      btn4.onclick = function (){socket.send("$J=G91X-1.0F" + feedrate.value);}
+      const btn5 = document.querySelector('#btn5');
+      btn5.onclick = function (){socket.send("$J=G90X0Y0F" + feedrate.value);}
+      const btn6 = document.querySelector('#btn6');
+      btn6.onclick = function (){socket.send("$J=G91X1.0F" + feedrate.value);}
+      const btn7 = document.querySelector('#btn7');
+      btn7.onclick = function (){socket.send("$J=G91X-1.0Y-1.0F" + feedrate.value);}
+      const btn8 = document.querySelector('#btn8');
+      btn8.onclick = function (){socket.send("$J=G91Y-1.0F" + feedrate.value);}
+      const btn9 = document.querySelector('#btn9');
+      btn9.onclick = function (){socket.send("$J=G91X1.0Y-1.0F" + feedrate.value);}
+
+      const unlock = document.querySelector('#unlock');
+      unlock.onclick = function (){socket.send("$X");}
+
+      const flush = document.querySelector('#flush');
+      flush.onclick = function (){socket.send('1');}
+
+      const startButton = document.querySelector('#startButton');
+      startButton.onclick = function (){socket.send('2');}
 
       const command = document.getElementById("fname");
       command.addEventListener("change", ()=>{
@@ -1002,8 +1214,16 @@ transition: all 0.4s ease 0s;
       socket.onopen = function(e) {  console.log("[socket] socket.onopen "); };
       socket.onerror = function(e) {  console.log("[socket] socket.onerror "); };
       socket.onmessage = function(e) {  
-          console.log("[socket] " + e.data);
-          document.getElementById("status").innerHTML = e.data;
+          // console.log("[socket] " + e.data);
+          if(e.data === "received"){
+            sendElement.style.display = "none";
+            center2.style.display = "block";
+            center1.style.display = "none";
+            menuIndicator.style.float = "right";
+          }
+          else{
+            document.getElementById("status").innerHTML = e.data;
+          }
       };
 
       //...............................................................................

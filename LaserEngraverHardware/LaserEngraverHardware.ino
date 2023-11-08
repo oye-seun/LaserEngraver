@@ -110,7 +110,7 @@ const unsigned char keyboard[] = {
 };
 
 // List of taken states
-// 0,3,4,5,6,7,8,9,10,11,12
+// 0,3,4,5,6,7,8,9,10,11,12,13
 
 MenuItem Items[] = {
   MenuItem(0, "FOLDERS", folder, 0),
@@ -189,9 +189,14 @@ uint8_t max_connections=8;//Maximum Connection Limit for AP
 int current_stations=0, new_stations=0;
 WebServer server(80);   //instantiate server at port 80 (http port)
 WebSocketsServer  webSocket = WebSocketsServer(81);
+bool webRunning = false;
 
 HardwareSerial grbl(2);
-char grblBuffer[100];
+char grblBuffer[600];
+
+File GCodeFile;
+bool compilingGCode = false;
+bool readGcode = true;
 
 hw_timer_t *My_timer = NULL;
 void IRAM_ATTR onEncoderChange(){
@@ -261,7 +266,7 @@ void setup() {
 
   server.on("/", handleMain);
   server.on("/add.png", [](){ReadSend("/add.png");});
-  server.on("/brightness.png", [](){ReadSend("/brightness.png");});
+  server.on("/feedrate.png", [](){ReadSend("/feedrate.png");});
   server.on("/cut.png", [](){ReadSend("/cut.png");});
   server.on("/description.png", [](){ReadSend("/description.png");});
   server.on("/light.png", [](){ReadSend("/light.png");});
@@ -271,6 +276,7 @@ void setup() {
   server.on("/home.png", [](){ReadSend("/home.png");});
   server.on("/action.png", [](){ReadSend("/action.png");});
   server.on("/measure.png", [](){ReadSend("/measure.png");});
+  server.on("/fupload",  HTTP_POST,[](){ server.send(200);}, handleFileUpload);
   server.onNotFound(handleNotFound);
   webSocket.onEvent(webSocketEvent);
 
@@ -278,6 +284,31 @@ void setup() {
   if (!SD.begin(cs)) {
     Serial.println("Initialization failed!");
   }
+
+  // GCodeFile = SD.open("/test.txt", FILE_WRITE);
+  // if (GCodeFile) {
+  //   Serial.print("Writing to test.txt...");
+  //   GCodeFile.println("testing 1, 2, 3.");
+  //   // close the file:
+  //   GCodeFile.close();
+  //   Serial.println("done.");
+  // } else {
+  //   Serial.println("error opening test.txt");
+  // }
+
+  // uint8_t arrr[] = {(uint8_t)82, (uint8_t)83, (uint8_t)84, (uint8_t)85, (uint8_t)86};
+  // GCodeFile = SD.open("/test2.txt", FILE_WRITE);
+  // if (GCodeFile) {
+  //   Serial.print("Writing to test.txt...");
+  //   GCodeFile.printf("%s\n", arrr);
+  //   // close the file:
+  //   GCodeFile.close();
+  //   Serial.println("done.");
+  // } else {
+  //   Serial.println("error opening test.txt");
+  // }
+  grblBuffer[599] = '\0';
+  // selectState = 5;
 }
 
 void handleMain() {
@@ -293,29 +324,38 @@ void ReadSend(String dir)
   size_t sent = server.streamFile(myFile, getContentType(dir));
   myFile.close();
 }
-// void ReadSend(String dir)
-// {
-//   File myFile = SD.open(dir);
-//   char Packet[myFile.size() + 1];
-//   int endpos;
-//   if (myFile) 
-//   {
-//     for (int j = 0; j < myFile.size(); j++)
-//     {
-//       myFile.seek(j);
-//       Packet[j] = myFile.peek();
-//       endpos = j;
-//       yield();      
-//     }
-//     Packet[endpos+1] = '\0';
-//     server.send(200, "text/html", Packet);
-//   }
-//   else
-//   {
-//    Serial.println("e no work o");
-//   }
-//   myFile.close();
-// }
+
+File UploadFile; 
+void handleFileUpload(){ // upload a new file to the Filing system
+  HTTPUpload& uploadfile = server.upload(); // See https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WebServer/srcv
+                                            // For further information on 'status' structure, there are other reasons such as a failed transfer that could be used
+  if(uploadfile.status == UPLOAD_FILE_START)
+  {
+    String filename = uploadfile.filename;
+    if(!filename.startsWith("/")) filename = "/"+filename;
+    Serial.print("Upload File Name: "); Serial.println(filename);
+    SD.remove(filename);                         // Remove a previous version, otherwise data is appended the file again
+    UploadFile = SD.open(filename, FILE_WRITE);  // Open the file for writing in SPIFFS (create it, if doesn't exist)
+    filename = String();
+  }
+  else if (uploadfile.status == UPLOAD_FILE_WRITE)
+  {
+    if(UploadFile) UploadFile.write(uploadfile.buf, uploadfile.currentSize); // Write the received bytes to the file
+  } 
+  else if (uploadfile.status == UPLOAD_FILE_END)
+  {
+    if(UploadFile)          // If the file was successfully created
+    {                                    
+      UploadFile.close();   // Close the file again
+      Serial.print("Upload Size: "); Serial.println(uploadfile.totalSize);
+      webSocket.broadcastTXT("received");
+    } 
+    // else
+    // {
+    //   ReportCouldNotCreateFile("upload");
+    // }
+  }
+}
 
 //This functions returns a String of content type
 String getContentType(String filename) {
@@ -366,11 +406,49 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
       break;
 
     case WStype_TEXT:
-      Serial.printf("[%u] get Text: %s\n", num, payload);
-      if(payload[0] == '1'){
+      if(payload[0] == 'y'){
+        compilingGCode = false;
+        GCodeFile.close();
+        Serial.println("Closing file");
+        webSocket.broadcastTXT("received");
+      }
+      else if(compilingGCode && GCodeFile){
+        GCodeFile.printf("%s\n", payload);
+        Serial.printf("[%u] Gcode: %s\n", num, payload);
+      }
+      
+      else if(payload[0] == 'z'){
+        Serial.println("Creating file");
+        GCodeFile = SD.open("/GCode1.txt", FILE_WRITE);
+        compilingGCode = true;
+      }
+
+      else if(payload[0] == '1'){
         grbl.write(24);
       }
-      grbl.printf("%s\n", payload);
+
+      else if(payload[0] == '$'){
+        grbl.printf("%s\n", payload);
+      }
+
+      else if(payload[0] == '2'){
+        Serial.println("2 pressed");
+        
+        GCodeFile = SD.open("/GCode1.txt");
+        // Engrave();
+        // if (GCodeFile) {
+        //   String str = GCodeFile.readStringUntil('\n');
+        //   Serial.println(str);
+        //   grbl.println(str);
+        // }
+        selectState = 13;
+      }
+      
+      else{
+        Serial.printf("[%u] get Text: %s\n", num, payload);
+        grbl.printf("%s\n", payload);
+      }
+
       // send message to client
       // webSocket.sendTXT(num, "message here");
       // send data to all connected clients
@@ -389,6 +467,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
 
 void loop() {
+  if(webRunning){
+    ControlLoop();
+  }
+
   switch(selectState){
     case 0:
       RenderMenu();
@@ -411,7 +493,7 @@ void loop() {
       break;
     case 8:
       HotspotInfo();
-      controlLoop();
+      // ControlLoop();
       break;
     case 9:
       ChangeHotspotName();
@@ -425,10 +507,28 @@ void loop() {
     case 12:
       ProcessHotspotInfoButtonPress();
       break;
+    case 13:
+      Engrave();
+      break;
   }
 }
 
-void controlLoop(){
+void Engrave(){
+  if (GCodeFile && readGcode) {
+    String str = GCodeFile.readStringUntil('\n');
+    Serial.println(str);
+    grbl.println(str);
+    readGcode = false;
+
+    // close the file:
+    if(GCodeFile.position() >= GCodeFile.size() - 1){
+      GCodeFile.close();
+      readGcode = true;
+    }
+  }
+}
+
+void ControlLoop(){
   webSocket.loop();
   server.handleClient();
   HandleGRBL();
@@ -457,6 +557,12 @@ void HandleGRBL(){
   //  }
   if(grbl.available() > 0){
     grbl.readBytes(grblBuffer, 100);
+    if (grblBuffer[0] == 'o' && grblBuffer[1] == 'k'){
+      // GCodeFile.seek(GCodeFile.position()+1);
+      Serial.println("ok found");
+      readGcode = true;
+    }
+    Serial.println(grblBuffer);
     webSocket.broadcastTXT(grblBuffer);
   }
 }
@@ -632,6 +738,7 @@ void TurnOnHotspot(){
     Serial.println(WiFi.softAPIP());
     server.begin();
     webSocket.begin();
+    webRunning = true;
   }
   else
   {
