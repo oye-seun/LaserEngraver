@@ -515,14 +515,15 @@ transition: all 0.4s ease 0s;
             <div class="listItemFlex">
               <button type="button" class="functionButtons">Frame</button> 
               <button type="button" class="functionButtons">Focus</button>
-              <button type="button" class="functionButtons">Blink</button> 
+              <button type="button" class="functionButtons" id="blink">Blink</button> 
             </div>
           </li>
           <li class="listItem">
             <h4 class="listItemHeading">Homing</h4>
             <div class="listItemFlex">
               <button type="button" class="functionButtons">Find Home</button> 
-              <button type="button" class="functionButtons">Set Home</button> 
+              <button type="button" class="functionButtons" id="corners">Job Corners</button>
+              <button type="button" class="functionButtons">Set Home</button>
             </div>
           </li>
           <li class="directionButtonsHolder">
@@ -650,7 +651,7 @@ transition: all 0.4s ease 0s;
         pxPerLine = canvas2.height/arrLen;
         // imgArr = new Uint8ClampedArray(canvas2.width * arrLen * 2);
         for (let i = 0; i < arrLen; i++) {
-          let yelement = Math.round( i * pxPerLine * 4 * canvas2.width);
+          let yelement = Math.round( i * pxPerLine) * 4 * canvas2.width;
           for(let j = 0; j < canvas2.width; j++){
             // imgArr[(i*canvas2.width*2) + (j*2)] =  imgData.data[yelement + (j*4)];
             // imgArr[(i*canvas2.width*2) + (j*2) + 1] =  imgData.data[yelement + (j*4) + 3];
@@ -675,6 +676,7 @@ transition: all 0.4s ease 0s;
           imgHeight = length.value;
         }
         else imgHeight = length.value;
+        rasterImage();
         render(xoff, yoff);
       }
 
@@ -685,6 +687,7 @@ transition: all 0.4s ease 0s;
           imgWidth = width.value;
         }
         else imgWidth = width.value;
+        rasterImage();
         render(xoff, yoff);
       }
       //.............................................................................
@@ -713,10 +716,13 @@ transition: all 0.4s ease 0s;
         if(dragging === 0){
           imgX += movementX * 1;
           imgY += movementY * -1;
+
+          if(imgX < 0) imgX = 0;
+          if(imgY < 0) imgY = 0;
+
           render(xoff, yoff);
         }
         else if(dragging === 1) {
-
           xoff += movementX * -1;
           yoff += movementY * 1;
 
@@ -761,7 +767,7 @@ transition: all 0.4s ease 0s;
 
       canvas.onmousemove = function (e){
         e.preventDefault();
-        inputMove(e.movementX, e.movementY);
+        inputMove(e.movementX * 0.8 * (250/scale), e.movementY * 0.8 *(250/scale));
       }
 
       canvas.ontouchmove = function(e){
@@ -783,7 +789,7 @@ transition: all 0.4s ease 0s;
         for(let i = 0; i < touches.length; i++){
           let idx = ongoingTouchIndexById(touches[i].identifier);
           if(touches[i].identifier === identifier){  // first touch, handle drag movement
-            inputMove(touches[i].clientX - ongoingTouches[idx].clientX, touches[i].clientY - ongoingTouches[idx].clientY);
+            inputMove((touches[i].clientX - ongoingTouches[idx].clientX)*(250/scale), (touches[i].clientY - ongoingTouches[idx].clientY)*(250/scale));
           }
           if(idx >= 0) ongoingTouches.splice(idx, 1, copyTouch(touches[i])); 
         }
@@ -1046,7 +1052,7 @@ transition: all 0.4s ease 0s;
         for (let i = 0; i < arrLen; i++) {
           socket.send("G00 X" + imgX  + " Y" + (imgY + (i*mmPerLine)));
           // console.log("G00 X" + imgX  + " Y" + (imgY + (i*mmPerLine)));
-          let yelement = Math.round( i * pxPerLine * 4 * canvas2.width);
+          let yelement = Math.round( i * pxPerLine) * 4 * canvas2.width;
           for(let j = 0; j < canvas2.width; j++){
 
             let rpos = (yelement +  (j*4));
@@ -1091,7 +1097,7 @@ transition: all 0.4s ease 0s;
         for (let i = 0; i < arrLen; i++) {
           blob = new Blob([blob, "G00 X" + imgX  + " Y" + (imgY + (i*mmPerLine)) + "\n"], { type: 'plain/text' });
 
-          let yelement = Math.round( i * pxPerLine * 4 * canvas2.width);
+          let yelement = Math.round( i * pxPerLine) * 4 * canvas2.width;
           for(let j = 0; j < canvas2.width; j++){
 
             let rpos = (yelement +  (j*4));
@@ -1175,30 +1181,83 @@ transition: all 0.4s ease 0s;
       //...............................................................................
 
       //..........Attaching control buttons............................................
+      let corners = false;
+      const jobCorners = document.querySelector('#corners');
+      jobCorners.onclick = function (){
+        if(!corners) {
+          corners = true;
+          jobCorners.style.background = "#a4a4a4";
+        }
+        else{
+          corners = false;
+          jobCorners.style.background = "#f2f2f2";
+        }
+      }
+
+      let valX = 0;
+      let valY = 0;
+      function recalcOffsets(){
+        valX = imgX + Number(width.value);
+        valY = imgY + Number(length.value);
+      }
+
       const btn1 = document.querySelector('#btn1');
-      btn1.onclick = function (){socket.send("$J=G91X-1.0Y1.0F" + feedrate.value);}
+      btn1.onclick = function (){
+        if(corners) {
+          recalcOffsets();
+          socket.send("G00 X" + imgX  + " Y" + valY);
+        }
+        else socket.send("$J=G91X-1.0Y1.0F" + feedrate.value);
+      }
+
       const btn2 = document.querySelector('#btn2');
       btn2.onclick = function (){socket.send("$J=G91Y1.0F" + feedrate.value);}
+
       const btn3 = document.querySelector('#btn3');
-      btn3.onclick = function (){socket.send("$J=G91X1.0Y1.0F" + feedrate.value);}
+      btn3.onclick = function (){
+        if(corners) {
+          recalcOffsets();
+          socket.send("G00 X" + valX  + " Y" + valY);
+        }
+        else socket.send("$J=G91X1.0Y1.0F" + feedrate.value);
+      }
+
       const btn4 = document.querySelector('#btn4');
       btn4.onclick = function (){socket.send("$J=G91X-1.0F" + feedrate.value);}
+
       const btn5 = document.querySelector('#btn5');
       btn5.onclick = function (){socket.send("$J=G90X0Y0F" + feedrate.value);}
+
       const btn6 = document.querySelector('#btn6');
       btn6.onclick = function (){socket.send("$J=G91X1.0F" + feedrate.value);}
+
       const btn7 = document.querySelector('#btn7');
-      btn7.onclick = function (){socket.send("$J=G91X-1.0Y-1.0F" + feedrate.value);}
+      btn7.onclick = function (){
+        if(corners) socket.send("G00 X" + imgX  + " Y" + imgY);
+        else socket.send("$J=G91X-1.0Y-1.0F" + feedrate.value);
+      }
+
       const btn8 = document.querySelector('#btn8');
       btn8.onclick = function (){socket.send("$J=G91Y-1.0F" + feedrate.value);}
+
       const btn9 = document.querySelector('#btn9');
-      btn9.onclick = function (){socket.send("$J=G91X1.0Y-1.0F" + feedrate.value);}
+      btn9.onclick = function (){
+        if(corners) {
+          recalcOffsets();
+          socket.send("G00 X" + valX  + " Y" + imgY);
+        }
+        else socket.send("$J=G91X1.0Y-1.0F" + feedrate.value);
+      }
 
       const unlock = document.querySelector('#unlock');
       unlock.onclick = function (){socket.send("$X");}
-
+      
       const flush = document.querySelector('#flush');
       flush.onclick = function (){socket.send('1');}
+      
+      const blink = document.querySelector('#blink');
+      blink.onpointerdown = function (){socket.send("S10");}
+      blink.onpointerup = function (){socket.send("S0");}
 
       const startButton = document.querySelector('#startButton');
       startButton.onclick = function (){socket.send('2');}

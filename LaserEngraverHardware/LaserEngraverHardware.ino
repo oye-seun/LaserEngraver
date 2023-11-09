@@ -308,7 +308,7 @@ void setup() {
   //   Serial.println("error opening test.txt");
   // }
   grblBuffer[599] = '\0';
-  // selectState = 5;
+  // selectState = 5;  //debug mode
 }
 
 void handleMain() {
@@ -427,8 +427,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         grbl.write(24);
       }
 
-      else if(payload[0] == '$'){
+      else if(payload[0] == '$' || payload[0] == 'S' || payload[0] == 'G'){
         grbl.printf("%s\n", payload);
+        Serial.printf("[%u] get Text: %s\n", num, payload);
       }
 
       else if(payload[0] == '2'){
