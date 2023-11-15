@@ -427,7 +427,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         grbl.write(24);
       }
 
-      else if(payload[0] == '$' || payload[0] == 'S' || payload[0] == 'G'){
+      else if(payload[0] == '$' || payload[0] == 'M' || payload[0] == 'G'){
         grbl.printf("%s\n", payload);
         Serial.printf("[%u] get Text: %s\n", num, payload);
       }

@@ -476,7 +476,9 @@ transition: all 0.4s ease 0s;
 
     <div id="sendElement">
       <div class="overlay"></div>
-      <div class="modal">SENDING</div>
+      <div class="modal">
+        SENDING
+      </div>
     </div>
 
     <center class="center2">
@@ -1054,7 +1056,6 @@ transition: all 0.4s ease 0s;
           // console.log("G00 X" + imgX  + " Y" + (imgY + (i*mmPerLine)));
           let yelement = Math.round( i * pxPerLine) * 4 * canvas2.width;
           for(let j = 0; j < canvas2.width; j++){
-
             let rpos = (yelement +  (j*4));
             let rpos2 = (yelement +  ((j+1)*4));
             let apos = rpos + 3;
@@ -1090,12 +1091,14 @@ transition: all 0.4s ease 0s;
         const formData = new FormData();
         let mmPerLine = 1/lPmm.value;
         let mmPerPx = width.value/canvas2.width;
-        let blob = new Blob(["G90\n" +"G0 X0 Y0 F" + feedrate.value + "\n" + "M4 S0\n"], { type: 'plain/text' });
+        // let blob = new Blob(["G90\n" +"G0 X0 Y0 F" + feedrate.value + "\n" + "M4 S0\n"], { type: 'plain/text' });
+        let gString = "G90\n" +"G0 X0 Y0 F" + feedrate.value + "\n" + "M4 S0\n";
         
 
 
         for (let i = 0; i < arrLen; i++) {
-          blob = new Blob([blob, "G00 X" + imgX  + " Y" + (imgY + (i*mmPerLine)) + "\n"], { type: 'plain/text' });
+          // blob = new Blob([blob, "G00 X" + imgX  + " Y" + (imgY + (i*mmPerLine)) + "\n"], { type: 'plain/text' });
+          gString = gString.concat("G00 X" + imgX  + " Y" + (imgY + Number(length.value) - (i*mmPerLine)) + "\n");
 
           let yelement = Math.round( i * pxPerLine) * 4 * canvas2.width;
           for(let j = 0; j < canvas2.width; j++){
@@ -1122,21 +1125,38 @@ transition: all 0.4s ease 0s;
               let s = ((255-currentPX)*currentPXa* power.value * 10/65025);
               if(currentPXa === 0)
               { 
-                blob = new Blob([blob, "G00 X" + x + "\n"], { type: 'plain/text' });
+                // blob = new Blob([blob, "G00 X" + x + "\n"], { type: 'plain/text' });
+                gString = gString.concat("G00 X" + x + "\n");
               }
               // if(currentPXa === 0) console.log("G00 X" + x/* + " px value: " + currentPX*/);
               else
               {
-                 blob = new Blob([blob, "G01 X" + x  + " S" +  s + "\n"], { type: 'plain/text' });
+                //  blob = new Blob([blob, "G01 X" + x  + " S" +  s + "\n"], { type: 'plain/text' });
+                gString = gString.concat("G01 X" + x  + " S" +  s + "\n");
               }
               // else console.log("G01 X" + x  + " S" +  s/*+ " px value: " + imgArr[yStart + (j*2)]*/);
             }
           }
         }
 
-        blob = new Blob([blob, "M5" + "\n"], { type: 'plain/text' });
+        // blob = new Blob([blob, "M5" + "\n"], { type: 'plain/text' });
+        gString = gString.concat("M5" + "\n");
+
+        // file = new File([gString], "GCode1.txt", {type: "text/plain",});
+        // formData.append('file', file);
+
+        let blob = new Blob([gString], { type: 'plain/text' });
         formData.append('file', blob, 'GCode1.txt');
+        // formData.append('file', gString, 'GCode1.txt');
+        
+
         const request = new XMLHttpRequest();
+        request.upload.addEventListener("progress", function (event) {
+          if(event.lengthComputable) {
+            document.querySelector('.modal').innerHTML = "SENDING......" + Math.round((event.loaded / event.total) * 100) + "%";
+          }
+        });
+
         request.open('POST', '/fupload');
         request.send(formData);
       }
@@ -1256,8 +1276,8 @@ transition: all 0.4s ease 0s;
       flush.onclick = function (){socket.send('1');}
       
       const blink = document.querySelector('#blink');
-      blink.onpointerdown = function (){socket.send("S10");}
-      blink.onpointerup = function (){socket.send("S0");}
+      blink.onpointerdown = function (){socket.send("M3 G1 F100 S30");}
+      blink.onpointerup = function (){socket.send("M5");}
 
       const startButton = document.querySelector('#startButton');
       startButton.onclick = function (){socket.send('2');}
