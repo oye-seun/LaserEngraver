@@ -198,23 +198,34 @@ File GCodeFile;
 bool compilingGCode = false;
 bool readGcode = true;
 
-hw_timer_t *My_timer = NULL;
-void IRAM_ATTR onEncoderChange(){
-  aState = digitalRead(outputA);
-  if (digitalRead(outputB) != aState) { 
+hw_timer_t *My_timerCW = NULL;
+void IRAM_ATTR onEncoderChangeCW(){
+  if(digitalRead(outputA) == HIGH && digitalRead(outputB) == LOW ){
     counter ++;
   } 
-  else {
+}
+
+hw_timer_t *My_timerCCW = NULL;
+void IRAM_ATTR onEncoderChangeCCW(){
+  if (digitalRead(outputB) == HIGH && digitalRead(outputA) == LOW ){ 
     counter --;
-  }
+  } 
 }
 
 // void IRAM_ATTR CountTicks();
 // void IRAM_ATTR ButtonPress();
-void IRAM_ATTR CountTicks(){
+void IRAM_ATTR CountTicksUp(){
   unsigned long interruptTime = millis();
-  if(interruptTime - lastInterruptTime > 50){
-    timerAlarmEnable(My_timer); //Just Enable
+  if(interruptTime - lastInterruptTime > 15){
+    timerAlarmEnable(My_timerCW); //Just Enable
+  }
+  lastInterruptTime = interruptTime;
+}
+
+void IRAM_ATTR CountTicksDown(){
+  unsigned long interruptTime = millis();
+  if(interruptTime - lastInterruptTime > 15){
+    timerAlarmEnable(My_timerCCW); //Just Enable
   }
   lastInterruptTime = interruptTime;
 }
@@ -251,16 +262,21 @@ void setup() {
   }
 
   pinMode (outputA,INPUT);
-  attachInterrupt(outputA, CountTicks, CHANGE);
+  attachInterrupt(outputA, CountTicksUp, HIGH);
   pinMode (outputC,INPUT);
   attachInterrupt(outputC, ButtonPress, HIGH);
   pinMode (outputB,INPUT);
+  attachInterrupt(outputB, CountTicksDown, HIGH);
   // Reads the initial state of the outputA
   // aLastState = digitalRead(outputA);  
 
-  My_timer = timerBegin(0, 80, true);
-  timerAttachInterrupt(My_timer, &onEncoderChange, true);
-  timerAlarmWrite(My_timer, 2000, false);
+  My_timerCW = timerBegin(0, 80, true);
+  timerAttachInterrupt(My_timerCW, &onEncoderChangeCW, true);
+  timerAlarmWrite(My_timerCW, 2000, false);
+
+  My_timerCCW = timerBegin(1, 80, true);
+  timerAttachInterrupt(My_timerCCW, &onEncoderChangeCCW, true);
+  timerAlarmWrite(My_timerCCW, 2000, false);
 
   display.clearDisplay();
 
