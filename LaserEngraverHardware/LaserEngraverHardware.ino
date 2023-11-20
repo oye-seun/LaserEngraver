@@ -221,7 +221,7 @@ void IRAM_ATTR CountTicks(){
 
 void IRAM_ATTR ButtonPress(){
   unsigned long pressTime = millis();
-  if(pressTime - lastPress > 500){
+  if(pressTime - lastPress > 500 && digitalRead(outputC) == HIGH){
     unsigned long pressTime = millis();
     if(selectState == 10) {ProcessKeyboardInput(); lastPress = pressTime; return;}
     if(item < 0) return;
