@@ -82,6 +82,11 @@ const unsigned char PROGMEM toggle_off[] = {
 	0xdc, 0x03, 0x4c, 0x02, 0x60, 0x06, 0x3f, 0xfc, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+const unsigned char PROGMEM rocket[] = {
+  0x00, 0x00, 0x01, 0x80, 0x03, 0xc0, 0x02, 0x40, 0x06, 0x60, 0x04, 0x20, 0x05, 0xa0, 0x05, 0xa0,
+  0x05, 0xa0, 0x1c, 0x38, 0x1c, 0x38, 0x14, 0x28, 0x17, 0xe8, 0x1c, 0x38, 0x10, 0x08, 0x00, 0x00
+};
+
 
 const unsigned char PROGMEM backspace[] = {
 	0x00, 0x1e, 0x22, 0x4e, 0x4e, 0x22, 0x1e, 0x00
@@ -110,7 +115,7 @@ const unsigned char keyboard[] = {
 };
 
 // List of taken states
-// 0,3,4,5,6,7,8,9,10,11,12,13
+// 0,3,4,5,6,7,8,9,10,11,12,13,14
 
 MenuItem Items[] = {
   MenuItem(0, "FOLDERS", folder, 0),
@@ -123,20 +128,38 @@ MenuItem Settings[] = {
   MenuItem(0, "BACK", arrow_back, 0),
   MenuItem(30, "HOTSPOT", hotspot, 4),
   MenuItem(60, "PRINT PARAMS", list, 3),
-  MenuItem(90, "ABOUT", info, 3)
+  MenuItem(90, "ABOUT", info, 11)
 };
 #define SettingsNo    4
 
 
 MenuItem HotSpotSettings[] = {
   MenuItem(0, "BACK", arrow_back, 3),
-  MenuItem(30, "ON", toggle_on, 5),
+  MenuItem(30, "OFF", toggle_on, 5),
   MenuItem(60, "NAME", point, 6),
   MenuItem(90, "PASSWORD", point, 7),
-  MenuItem(120, "QR CODE", point, 11)
+  MenuItem(120, "QR CODE", point, 8),
+  MenuItem(30, "ON", toggle_off, 5)
 };
 #define HSettingsNo   5
 
+WordBlock WordBlocks[] = {
+  WordBlock(30, 65, 45, 10, "Created", 1),
+  WordBlock(80, 115, 13, 10, "By", 1),
+  WordBlock(95, 165, 55, 10, "OLUWASEUN", 1),
+  WordBlock(16, 215, 22, 10, "OYE", 1),
+  WordBlock(60, 265, 35, 10, "SALEM", 1),
+  WordBlock(55, 315, 62, 10, "OLORUNDARE", 1),
+};
+#define WordBlocksNo  6
+float gameSpeed = 0.5;
+bool endGame = false;
+
+MenuItem GameEnd[] = {
+  MenuItem(0, "RETRY", point, 11),
+  MenuItem(30, "QUIT", point, 3),
+};
+#define GameEndNo  2
 
 
 #define LOGO_HEIGHT   16
@@ -240,6 +263,7 @@ void IRAM_ATTR ButtonPress(){
     else if(selectState == 3) selectState = Settings[item].NewState;
     else if(selectState == 4) selectState = HotSpotSettings[item].NewState;
     else if(selectState == 8) {selectState = 12; lastPress = pressTime; return;}// flip display colors
+    else if(selectState == 14) {ProcessGameInput(); lastPress = pressTime; return;}
 
   // reset counters
   counter = 0;
@@ -324,7 +348,7 @@ void setup() {
   //   Serial.println("error opening test.txt");
   // }
   grblBuffer[599] = '\0';
-  // selectState = 5;  //debug mode
+  // selectState = 5;  //web debug mode
 }
 
 void handleMain() {
@@ -518,14 +542,18 @@ void loop() {
     case 10:
       RenderKeyboard();
       break;
-    case 11:
-      OnQR_CODE_Clicked();
+    case 11: //Reset Game
+      ResetGame();
+      selectState = 14;
       break;
     case 12:
       ProcessHotspotInfoButtonPress();
       break;
     case 13:
       Engrave();
+      break;
+    case 14:
+      RunCreditsGame();
       break;
   }
 }
@@ -576,10 +604,10 @@ void HandleGRBL(){
     grbl.readBytes(grblBuffer, 100);
     if (grblBuffer[0] == 'o' && grblBuffer[1] == 'k'){
       // GCodeFile.seek(GCodeFile.position()+1);
-      Serial.println("ok found");
+      // Serial.println("ok found");
       readGcode = true;
     }
-    Serial.println(grblBuffer);
+    // Serial.println(grblBuffer);
     webSocket.broadcastTXT(grblBuffer);
   }
 }
@@ -628,11 +656,18 @@ void RenderHotspotSettings(){
   display.drawBitmap((128 - LOGO_WIDTH)/2, 32 + (-30 - listCentre) - (LOGO_HEIGHT/2), hotspot, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
 
   for(int i = 0; i < HSettingsNo; i++){
+    //switch btw off and on
+    // if(webRunning && i == 1) i++;
+    // else if (!webRunning && i == 2) i++;
+
+    //render items
     if(i == item){
-      DrawMenuItem(32 + (HotSpotSettings[i].Pos - listCentre), HotSpotSettings[i].Text, HotSpotSettings[i].bitMap, true);
+      if(i == 1 && !webRunning) DrawMenuItem(32 + (HotSpotSettings[5].Pos - listCentre), HotSpotSettings[5].Text, HotSpotSettings[5].bitMap, true);
+      else DrawMenuItem(32 + (HotSpotSettings[i].Pos - listCentre), HotSpotSettings[i].Text, HotSpotSettings[i].bitMap, true);
     }
     else{
-      DrawMenuItem(32 + (HotSpotSettings[i].Pos - listCentre), HotSpotSettings[i].Text, HotSpotSettings[i].bitMap);
+      if(i == 1 && !webRunning) DrawMenuItem(32 + (HotSpotSettings[5].Pos - listCentre), HotSpotSettings[5].Text, HotSpotSettings[5].bitMap);
+      else DrawMenuItem(32 + (HotSpotSettings[i].Pos - listCentre), HotSpotSettings[i].Text, HotSpotSettings[i].bitMap);
     }
   }
   display.display();
@@ -867,15 +902,70 @@ void DisplayQRCode(int xpos, int ypos){
   // display.display();
 }
 
-void OnQR_CODE_Clicked(){
+// tiny Game
+void RunCreditsGame(){
+  if(endGame){
+    // display.fillRect(0, 40, 128, 40, SSD1306_BLACK);
+    display.clearDisplay();
+    RegularScrollUpdate(2, 0);
+    for(int i = 0; i < GameEndNo; i++){
+      if(i == item){
+        DrawMenuItem(32 + (GameEnd[i].Pos - listCentre), GameEnd[i].Text, GameEnd[i].bitMap, true);
+      }
+      else{
+        DrawMenuItem(32 + (GameEnd[i].Pos - listCentre), GameEnd[i].Text, GameEnd[i].bitMap);
+      }
+    }
+    display.display();
+    return;
+  }
+
+  GameScrollUpdate(4, 0);
   display.clearDisplay();
   display.setTextSize(1);             // Normal 1:1 pixel scale
-  display.setTextColor(SSD1306_WHITE);        // Draw white text
-  display.setCursor(0,0);     
-  display.println("Please turn on hotspot first");
+
+  display.drawBitmap( listCentre - (LOGO_WIDTH/2) + 6, 64 - (10 + (LOGO_HEIGHT/2)), rocket, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+
+  for(int i = 0; i < WordBlocksNo; i++){
+    WordBlocks[i].targetPlayer(listCentre + 6);
+    WordBlocks[i].fall(gameSpeed);
+    endGame += WordBlocks[i].collisionCheck(listCentre + 6, 10, 16, 16);
+    DrawWordBlock(WordBlocks[i].xPos, WordBlocks[i].yPos, WordBlocks[i].width, WordBlocks[i].height, WordBlocks[i].word, WordBlocks[i].textSize);
+    
+    if(WordBlocks[i].yPos < -8){
+      int j = (i - 1 < 0)? WordBlocksNo -1 : i - 1;
+      WordBlocks[i].yPos = WordBlocks[j].yPos + 50;
+    }
+    gameSpeed += 0.0001;
+  }
   display.display();
 }
 
+void ResetGame(){
+  gameSpeed = 0.5;
+  endGame = false;
+  WordBlocks[0].yPos = 65;
+  for(int i = 1; i < WordBlocksNo; i++){
+    int j = (i - 1 < 0)? WordBlocksNo -1 : i - 1;
+    WordBlocks[i].yPos = WordBlocks[j].yPos + 50;
+  }
+}
+void ProcessGameInput(){
+  if(endGame) selectState = GameEnd[item].NewState;
+}
+
+
+void DrawWordBlock(float xpos, float ypos, int Width, int Height, String text, int size){
+  Width *= size;
+  Height *= size;
+  int posX = (int)xpos - (Width/2);
+  int posY =  64 - ((int)ypos + (Height/2)) ;
+  display.drawRect(posX, posY, Width, Height, SSD1306_WHITE);
+  display.setTextSize(size);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+  display.setCursor(posX + 2, posY + 2);
+  display.println(text);
+}
 
 void DrawMenuItem(int pos, String text, const uint8_t *bitmap){
   display.drawRect(0, pos - (Menu_Height/2), Menu_Width + 1, Menu_Height, SSD1306_WHITE);
@@ -913,6 +1003,15 @@ void RegularScrollUpdate(int itemCount, int negativeEnd){
   if(counter < negativeEnd * 2){
     counter = (itemCount - 1)*2;
   }
+}
+
+void GameScrollUpdate(int itemCount, int negativeEnd){
+  item = (counter/2);
+  listCentre = Lerp(listCentre, item * 30, 0.1);
+
+  //loop the counter on the negative
+  if(counter < negativeEnd * 2) counter = negativeEnd * 2;
+  else if(counter > (itemCount*2)) counter = (itemCount*2);
 }
 
 void CopyCharFromArrayB(char A[], int startA, char B[], int startB, int length){

@@ -1087,37 +1087,26 @@ transition: all 0.4s ease 0s;
         socket.send('y');
       }
 
+      // line to line tracing
       function generateGCode3(){
         const formData = new FormData();
         let mmPerLine = 1/lPmm.value;
         let mmPerPx = width.value/canvas2.width;
-        // let blob = new Blob(["G90\n" +"G0 X0 Y0 F" + feedrate.value + "\n" + "M4 S0\n"], { type: 'plain/text' });
         let gString = "G90\n" +"G0 X0 Y0 F" + feedrate.value + "\n" + "M4 S0\n";
-        
-
-
         for (let i = 0; i < arrLen; i++) {
-          // blob = new Blob([blob, "G00 X" + imgX  + " Y" + (imgY + (i*mmPerLine)) + "\n"], { type: 'plain/text' });
           gString = gString.concat("G00 X" + imgX  + " Y" + (imgY + Number(length.value) - (i*mmPerLine)) + "\n");
-
           let yelement = Math.round( i * pxPerLine) * 4 * canvas2.width;
           for(let j = 0; j < canvas2.width; j++){
-
             let rpos = (yelement +  (j*4));
             let rpos2 = (yelement +  ((j+1)*4));
             let apos = rpos + 3;
             let apos2 = rpos2  + 3;
             let currentPX = rasterImg.data[rpos];
             let currentPXa = rasterImg.data[apos];
-
             if(apos >= rasterImg.data.length || apos2 >= rasterImg.data.length){
               continue;
             }
-
-            // arr[pos] = imgData.data[pos];
             if(currentPX + currentPXa  === rasterImg.data[rpos2] + rasterImg.data[apos2]){
-              // console.log("currentPX: " + currentPX + " nextpx: " + rasterImg.data[rpos2]);
-              // console.log("currentPX: " + rpos + " nextpx: " + rpos2);
               continue;
             }
             else{
@@ -1125,30 +1114,77 @@ transition: all 0.4s ease 0s;
               let s = ((255-currentPX)*currentPXa* power.value * 10/65025);
               if(currentPXa === 0)
               { 
-                // blob = new Blob([blob, "G00 X" + x + "\n"], { type: 'plain/text' });
                 gString = gString.concat("G00 X" + x + "\n");
               }
-              // if(currentPXa === 0) console.log("G00 X" + x/* + " px value: " + currentPX*/);
               else
               {
-                //  blob = new Blob([blob, "G01 X" + x  + " S" +  s + "\n"], { type: 'plain/text' });
                 gString = gString.concat("G01 X" + x  + " S" +  s + "\n");
               }
-              // else console.log("G01 X" + x  + " S" +  s/*+ " px value: " + imgArr[yStart + (j*2)]*/);
             }
           }
         }
-
-        // blob = new Blob([blob, "M5" + "\n"], { type: 'plain/text' });
         gString = gString.concat("M5" + "\n");
+        let blob = new Blob([gString], { type: 'plain/text' });
+        formData.append('file', blob, 'GCode1.txt');
+        const request = new XMLHttpRequest();
+        request.upload.addEventListener("progress", function (event) {
+          if(event.lengthComputable) {
+            document.querySelector('.modal').innerHTML = "SENDING......" + Math.round((event.loaded / event.total) * 100) + "%";
+          }
+        });
+        request.open('POST', '/fupload');
+        console.log("upload time: " + Date.now());
+        request.send(formData);
+      }
 
-        // file = new File([gString], "GCode1.txt", {type: "text/plain",});
-        // formData.append('file', file);
+
+      function pixelVal(img, x, y){
+        x = (x > img.width)? img.width - 1 : x;
+        x = (x < 0)? 0 : x;
+        y = (y > img.height)? img.height - 1 : y;
+        y = (y < 0)? 0 : y;
+
+        // console.log("X: " + x + " Y: " + y);
+        // console.log("img width: " + img.width);
+        // let alpha = img.data[(y*img.width*4) + (x*4) + 3];
+        // if(alpha)
+        return (255 - img.data[(y*img.width*4) + (x*4)]) * (img.data[(y*img.width*4) + (x*4) + 3]/255);
+      }
+
+      // vectorize
+      function generateGCode4(){
+        const formData = new FormData();
+        let gString = "G90\n" +"G0 X0 Y0 F" + feedrate.value + "\n" + "M4 S0\n";
+
+        let mmPerPxAxisX = Number(width.value)/rasterImg.width;
+        let mmPerPxAxisY = Number(length.value)/rasterImg.height;
+
+        for (let j = 0; j < rasterImg.height; j++) {
+          for(let i = 0; i < rasterImg.width; i++){
+            let center = 255 - pixelVal(rasterImg, i, j);
+            if(center > 150) continue;
+
+            let left = pixelVal(rasterImg, i - 1, j);
+            let right = pixelVal(rasterImg, i + 1, j);
+            let up = pixelVal(rasterImg, i, j + 1);
+            let down = pixelVal(rasterImg, i, j - 1);
+
+            let s = (center * power.value * 10/255);
+
+            let horzTotal = left + center + right;
+            let xval =  (((i - 1) * left/horzTotal) + (i * center/horzTotal) + ((i + 1) * right/horzTotal)) * mmPerPxAxisX;
+
+            let vertTotal = up + center + down;
+            let yval = (((j - 1) * down/vertTotal) + (j * center/vertTotal) + ((j + 1) * up/vertTotal)) * mmPerPxAxisY;
+
+            gString = gString.concat("G01 X" + xval  + " Y" + yval + " S" +  s + "\n");
+          }
+        }
+
+        gString = gString.concat("M5" + "\n");
 
         let blob = new Blob([gString], { type: 'plain/text' });
         formData.append('file', blob, 'GCode1.txt');
-        // formData.append('file', gString, 'GCode1.txt');
-        
 
         const request = new XMLHttpRequest();
         request.upload.addEventListener("progress", function (event) {
@@ -1158,9 +1194,9 @@ transition: all 0.4s ease 0s;
         });
 
         request.open('POST', '/fupload');
+        console.log("upload time: " + Date.now());
         request.send(formData);
       }
-
 
       // function TestImage(){
       //   const arr = new Uint8ClampedArray(arrLen * canvas2.width * 4);
@@ -1197,6 +1233,7 @@ transition: all 0.4s ease 0s;
       menu_settings.onclick = function(){
         sendElement.style.display = "block";
         generateGCode3();
+        // generateGCode4();
       }
       //...............................................................................
 
@@ -1269,11 +1306,13 @@ transition: all 0.4s ease 0s;
         else socket.send("$J=G91X1.0Y-1.0F" + feedrate.value);
       }
 
+      var date = new Date();
+
       const unlock = document.querySelector('#unlock');
-      unlock.onclick = function (){socket.send("$X");}
+      unlock.onclick = function (){console.log("unlock sendtime: " + Date.now()); socket.send("$X");}
       
       const flush = document.querySelector('#flush');
-      flush.onclick = function (){socket.send('1');}
+      flush.onclick = function (){console.log("flush sendtime: " + Date.now()); socket.send('1'); }
       
       const blink = document.querySelector('#blink');
       blink.onpointerdown = function (){socket.send("M3 G1 F100 S30");}
@@ -1299,8 +1338,11 @@ transition: all 0.4s ease 0s;
             center2.style.display = "block";
             center1.style.display = "none";
             menuIndicator.style.float = "right";
+
+            console.log("upload finished time: " + Date.now());
           }
           else{
+            console.log("response receive time: " + Date.now());
             document.getElementById("status").innerHTML = e.data;
           }
       };
